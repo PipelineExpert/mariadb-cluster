@@ -11,8 +11,8 @@ fi
 if [ "$#" -ne 4 ]
 then
 	# use docker-machine to run scripts remotely.
-	#  echo "sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)" | $(docker-machine ssh $4)
-	# eval $(docker-machine env $4)
+	echo "sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)" | $(docker-machine ssh $4)
+	eval $(docker-machine env $4)
 else
 	sudo rm -rf /data
 	sudo mkdir -p /data
