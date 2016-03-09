@@ -1,12 +1,5 @@
 #!/bin/bash
 set -eo pipefail
-cat /docker-entrypoint.sh
-CMD="$@"
-
-if [ -z "$CMD" ]; then
-    echo "Waiting for instructions..."
-    CMD=($(nc -l 13306 2>&1))
-fi
 
 # if command starts with an option, prepend mysqld
 if [ "${1:0:1}" = '-' ]; then
@@ -27,17 +20,19 @@ if [ "$1" = 'mysqld' ]; then
 		mkdir -p "$DATADIR"
 		chown -R mysql:mysql "$DATADIR"
 
-		echo 'Initializing database'
-		mysql_install_db --user=mysql --rpm
+		echo 'Initializing'
+		mysql_install_db --user=mysql --datadir="$DATADIR" --rpm
 		echo 'Database initialized'
 
 		#"$@" --skip-networking &
 		pid="$!"
-
-		mysql=( mysql --protocol=socket -uroot )
+		/etc/init.d/mysql restart
+		echo "checking if mysql is running"
+		pwd=($(cat /etc/mysql/debian.cnf | grep password | awk {"print \$3"}))
+		mysql=( mysql )
 
 		for i in {30..0}; do
-			if echo 'SELECT 1' | "${CMD[@]}" &> /dev/null; then
+			if echo 'SELECT 1' | "${mysql[@]}" &> /dev/null; then
 				break
 			fi
 			echo 'MySQL init process in progress...'
@@ -47,7 +42,9 @@ if [ "$1" = 'mysqld' ]; then
 			echo >&2 'MySQL init process failed.'
 			exit 1
 		fi
+		echo "MySQL init successful"
 
+		pid=( pgrep mysql )
 		if [ -z "$MYSQL_INITDB_SKIP_TZINFO" ]; then
 			# sed is for https://bugs.mysql.com/bug.php?id=20545
 			mysql_tzinfo_to_sql /usr/share/zoneinfo | sed 's/Local time zone must be set--see zic manual page/FCTY/' | "${mysql[@]}" mysql
@@ -57,6 +54,9 @@ if [ "$1" = 'mysqld' ]; then
 			MYSQL_ROOT_PASSWORD="$(pwgen -1 32)"
 			echo "GENERATED ROOT PASSWORD: $MYSQL_ROOT_PASSWORD"
 		fi
+
+		echo "adding root and debian-sys-maint passwords"
+		pwd=($(cat /etc/mysql/debian.cnf | grep password | awk {"print \$3"}))
 		"${mysql[@]}" <<-EOSQL
 			-- What's done in this file shouldn't be replicated
 			--  or products like mysql-fabric won't work
@@ -64,6 +64,9 @@ if [ "$1" = 'mysqld' ]; then
 			DELETE FROM mysql.user ;
 			CREATE USER 'root'@'%' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}' ;
 			GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION ;
+			CREATE USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}' ;
+			GRANT ALL ON *.* TO 'root'@'localhost' WITH GRANT OPTION ;
+			GRANT ALL PRIVILEGES ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '$pwd';
 			DROP DATABASE IF EXISTS test ;
 			FLUSH PRIVILEGES ;
 		EOSQL
@@ -98,10 +101,7 @@ if [ "$1" = 'mysqld' ]; then
 			echo
 		done
 
-		if ! kill -s TERM "$pid" || ! wait "$pid"; then
-			echo >&2 'MySQL init process failed.'
-			exit 1
-		fi
+		/etc/init.d/mysql stop
 
 		echo
 		echo 'MySQL init process done. Ready for start up.'

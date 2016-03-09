@@ -26,56 +26,21 @@ Following naming convention in galera.cnf for certs:
 Mariadb10.1 automatically starts the master if datadir is empty on node1.
 
 export my_pw="somepwd"
-export this_node_IP="machineIP"
 export cluster_addresses="10.1.1.3,10.1.1.4, etc."
-export node_name = node-name
 
-**Scripts**
-_run_node1.sh_
-`#!/bin/bash`
-`#first node`
-`sudo mkdir -p /data`
-`docker run -d --name $node_name -e TERM=xterm \`
-`  -v /data:/var/lib/mysql \`
-`  -v /path_to/certs:/var/lib/mysql/ssl \`
-`-e MYSQL_INITDB_SKIP_TZINFO=yes \`
-`-e TERM=xterm \`
-`-d \`
-`-p 3306:3306 \`
-`-p 4444:4444 \`
-`-p 4567:4567/udp \`
-`-p 4567-4568:4567-4568 \`
-`-e MYSQL_ROOT_PASSWORD=$my_pw \`
-`vernonco/mariadb-cluster \`
-`--wsrep-new-cluster --wsrep-node-address=$this_node_IP \`
-`  --wsrep-sst-auth=root:$my_pwd \`
-`--wsrep-node-name=$node_name --wsrep-cluster-name=galera-cluster \`
-` --wsrep-cluster-address=gcomm://$cluster_addresses `
+**Scripts from https://github.com/stuartz/mariadb-cluster**
+***first node***
+`sh first_node.sh _host_IP_ $m_pwd _node#_ $cluster_addresses [docker-machine name]`
+***other nodes (change this_node_IP for each)***
+`sh node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [docker-machine name]`
+***restart/upgrade a node***
+`sh restart_node.sh _node#_ [docker-machine name]`
+***connect to node1***
+`sh connect.sh`
 
-export this_node_IP="machineIP"
-export node_name=another_node_name
-
-_bash run_a_node.sh_
-`#!/bin/bash`
-`docker run \
-  --name $node_name \`
-`  -v /data:/var/lib/mysql \`
-`  -v /path_to/certs:/var/lib/mysql/ssl \`
-`  -e MYSQL_INITDB_SKIP_TZINFO=yes \`
-`  -e MYSQL_ROOT_PASSWORD=$my_pwd \`
-` -e TERM=xterm \`
-`  -d \`
-`  -p 3306:3306 \`
-`  -p 4444:4444 \`
-`  -p 4567:4567/udp \`
-`  -p 4567-4568:4567-4568 \`
-`  vernonco/mariadb-cluster \`
-`  mysqld \`
-`  --wsrep-node-address=$this_node_IP \`
-`  --wsrep-sst-auth=root:$my_pwd \`
-`  --wsrep-node-name=$node_name --wsrep-cluster-name=galera-cluster \`
-`  --wsrep-sst-donor=node1 \`
-`  --wsrep-cluster-address=gcomm://$cluster_addresses `
 
 **MySQL connect to node1**
-docker run -it --link node1:mysql --rm mariadb sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p"$MYSQL_ENV_MYSQL_ROOT_PASSWORD"'
+`docker run -it --link node1:mysql --rm -e TERM=xterm\`
+`	-v /var/lib/mysql -v /path-to-certs/:/var/lib/mysql/ssl \`
+`	vernonco/mariadb-cluster \`
+`	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p'`

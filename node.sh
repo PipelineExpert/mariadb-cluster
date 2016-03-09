@@ -1,4 +1,5 @@
 #!/bin/bash
+# can be used to start another node
 this_node_IP="$1"
 my_pwd="$2"
 node=node"$3"
@@ -15,12 +16,12 @@ then
 	echo "sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)" | $(docker-machine ssh $5)
 	eval $(docker-machine env $5)
 else
+	docker stop $node
 	sudo rm -rf /data
 	sudo mkdir -p /data
 	sudo chown 999:docker /data
 fi
 #another node
-docker stop $node
 docker rm $node
 docker pull vernonco/mariadb-cluster
 docker run \
@@ -39,8 +40,9 @@ docker run \
   vernonco/mariadb-cluster \
   mysqld \
   --wsrep-node-address=$this_node_IP \
-  --wsrep-sst-auth=root:$my_pwd \
-  --wsrep-node-name=$node --wsrep-cluster-name=galera-cluster \
-  --wsrep-sst-donor=node1 \
+  --wsrep-node-name=$node \
+  --wsrep-cluster-name=galera-cluster \
   --wsrep-cluster-address=gcomm://$cluster_addresses
-  #wsrep_sst_receive_address =
+  --wsrep-sst-auth=root:$my_pwd \
+  --wsrep-sst-donor=node1 \
+  --wsrep_sst_receive_address=$this_node_ip
