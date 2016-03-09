@@ -49,5 +49,7 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql \
 COPY my.cnf /etc/mysql/
 
 COPY docker-entrypoint.sh /
+# added because of weird permission issue
+RUN chmod 770 /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 3306 4444 4567 4567/udp 4568 13306

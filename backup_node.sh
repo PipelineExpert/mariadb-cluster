@@ -3,17 +3,17 @@ this_node_IP="$1"
 my_pwd="$2"
 node=node"$3"
 cluster_addresses=$4
-if [ "$#" -ngt 3 ]
+if [ "$#" -lt 4 ]
 then
-	echo "need 3 args( IP pwd node#)... 10.0.0.3 password 1 "10.1.1.3,10.1.1.4,10.1.1.5" [docker-machine-name]"
+	echo "need 4 args( IP pwd node# cluster_addresses)... 10.0.0.3 password 1 "10.1.1.3,10.1.1.4,10.1.1.5" [docker-machine-name]"
 	exit
 fi
 
 if [ "$#" -gt 4 ]
 then
 	# use docker-machine to run scripts remotely.
-	echo "sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)" | $(docker-machine ssh $4)
-	eval $(docker-machine env $4)
+	echo "sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)" | $(docker-machine ssh $5)
+	eval $(docker-machine env $5)
 else
 	sudo rm -rf /data
 	sudo mkdir -p /data

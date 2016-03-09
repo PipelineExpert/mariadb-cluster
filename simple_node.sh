@@ -5,7 +5,7 @@
 this_node_IP="$1"
 my_pwd="$2"
 node=node"$3"
-if [ "$#" -ngt 2 ]
+if [ "$#" -lt 3 ]
 then
 	echo "need 3 args( IP pwd node#)... 10.0.0.3 password 1 [docker-machine-name]"
 	exit
