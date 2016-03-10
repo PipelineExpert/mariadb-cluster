@@ -23,7 +23,7 @@ else
 fi
 #first node
 docker rm $node
-#docker pull vernonco/mariadb-cluster
+docker pull vernonco/mariadb-cluster
 docker run \
   --name $node \
   -v /data:/var/lib/mysql \
@@ -36,12 +36,12 @@ docker run \
   -p 4444:4444 \
   -p 4567:4567/udp \
   -p 4567-4568:4567-4568 \
-  vernonco/mariadb-cluster:dev \
+  vernonco/mariadb-cluster \
   mysqld --wsrep-new-cluster \
   --wsrep-node-address=$this_node_IP \
   --wsrep-node-name=$node \
   --wsrep-cluster-name=galera-cluster \
-  --wsrep-cluster-address=gcomm://$cluster_addresses
+  --wsrep-cluster-address=gcomm://$cluster_addresses \
   --wsrep-sst-auth=root:$my_pwd \
   --wsrep-sst-donor=node1 \
   --wsrep_sst_receive_address=$this_node_ip

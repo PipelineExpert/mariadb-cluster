@@ -23,18 +23,22 @@ Following naming convention in galera.cnf for certs:
 `tkey=/var/lib/mysql/ssl/server-key.pem`
 * see http://galeracluster.com/documentation-webpages/sslcert.html*
 
-Mariadb10.1 automatically starts the master if datadir is empty on node1.
+COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran at init.
 
 export my_pw="somepwd"
 export cluster_addresses="10.1.1.3,10.1.1.4, etc."
 
 **Scripts from https://github.com/stuartz/mariadb-cluster**
+
 ***first node***
 `sh first_node.sh _host_IP_ $m_pwd _node#_ $cluster_addresses [docker-machine name]`
+
 ***other nodes (change this_node_IP for each)***
 `sh node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [docker-machine name]`
+
 ***restart/upgrade a node***
 `sh restart_node.sh _node#_ [docker-machine name]`
+
 ***connect to node1***
 `sh connect.sh`
 

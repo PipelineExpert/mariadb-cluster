@@ -13,8 +13,9 @@ fi
 if [ "$#" -gt 4 ]
 then
 	# use docker-machine to run scripts remotely.
-	echo "sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)" | $(docker-machine ssh $5)
 	eval $(docker-machine env $5)
+	docker stop $node
+	echo "sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)" | $(docker-machine ssh $5)
 else
 	docker stop $node
 	sudo rm -rf /data
@@ -42,7 +43,7 @@ docker run \
   --wsrep-node-address=$this_node_IP \
   --wsrep-node-name=$node \
   --wsrep-cluster-name=galera-cluster \
-  --wsrep-cluster-address=gcomm://$cluster_addresses
+  --wsrep-cluster-address=gcomm://$cluster_addresses \
   --wsrep-sst-auth=root:$my_pwd \
   --wsrep-sst-donor=node1 \
   --wsrep_sst_receive_address=$this_node_ip

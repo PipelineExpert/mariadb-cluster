@@ -62,6 +62,7 @@ if [ "$1" = 'mysqld' ]; then
 			--  or products like mysql-fabric won't work
 			SET @@SESSION.SQL_LOG_BIN=0;
 			DELETE FROM mysql.user ;
+			FLUSH PRIVILEGES;
 			CREATE USER 'root'@'%' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}' ;
 			GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION ;
 			CREATE USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}' ;
@@ -107,8 +108,8 @@ if [ "$1" = 'mysqld' ]; then
 		echo 'MySQL init process done. Ready for start up.'
 		echo
 	fi
-
 	chown -R mysql:mysql "$DATADIR"
+
 fi
 
 exec "$@"

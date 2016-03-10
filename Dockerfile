@@ -1,14 +1,14 @@
 FROM debian:jessie
 
 MAINTAINER "Stuart Zurcher" <https://github.com/stuartz-VernonCo>
-# using combination of code from official maraidb docker-library and https://github.com/diegomarangoni/docker-mariadb-galera
+# using combination of code from official maraidb docker-library
 
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 
 # install "pwgen" for randomizing passwords
 # add repository pinning to make sure dependencies from this MariaDB repo are preferred over Debian dependencies
-#  libmariadbclient18 : Depends: libmysqlclient18 (= 5.5.42+maria-1~wheezy) but 5.5.43-0+deb7u1 is to be installed
+# libmariadbclient18 : Depends: libmysqlclient18 (= 5.5.42+maria-1~wheezy) but 5.5.43-0+deb7u1 is to be installed
 
 # the "/var/lib/mysql" stuff here is because the mysql-server postinst doesn't have an explicit way to disable the mysql_install_db codepath besides having a database already "configured" (ie, stuff in /var/lib/mysql/mysql)
 # also, we set debconf keys to make APT a little quieter
@@ -49,7 +49,7 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql \
 COPY my.cnf /etc/mysql/
 
 COPY docker-entrypoint.sh /
-# added because of weird permission issue
-RUN chmod 770 /docker-entrypoint.sh
+# added chmod because of weird permission issue
+RUN mkdir -p /docker-entrypoint-initdb.d && chmod 770 /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
-EXPOSE 3306 4444 4567 4567/udp 4568 13306
+EXPOSE 3306 4444 4567 4567/udp 4568
