@@ -3,24 +3,24 @@
 node=node"$1"
 if [ "$#" -lt 1 ]
 then
-	echo "need 3 args( IP pwd node#)... 10.0.0.3 password 1 [docker-machine-name]"
+	echo "need 1 args( node#)...  1 [tag docker-machine-name]"
 	exit
 fi
 
-if [ "$#" -gt 1 ]
+if [ "$#" -gt 2 ]
 then
 	# use docker-machine to run scripts remotely.
-	eval $(docker-machine env $2)
+	eval $(docker-machine env $3)
 fi
 
 #first node
 docker stop $node
 docker rm $node
-docker pull vernonco/mariadb-cluster
+docker pull vernonco/mariadb-cluster:$2
 docker run \
   --name $node \
   -v /data:/var/lib/mysql \
-  -v /home/ubuntu/certs:/var/lib/mysql/ssl \
+  -v /home/ubuntu/certs:/etc/mysql/ssl \
   -e TERM=xterm \
   -d \
   -p 3306:3306 \

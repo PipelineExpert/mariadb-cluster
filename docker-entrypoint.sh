@@ -1,11 +1,10 @@
 #!/bin/bash
 set -eo pipefail
-
 # if command starts with an option, prepend mysqld
 if [ "${1:0:1}" = '-' ]; then
 	set -- mysqld "$@"
 fi
-
+args=( )
 if [ "$1" = 'mysqld' ]; then
 	# Get config
 	DATADIR="$("$@" --verbose --help --log-bin-index=`mktemp -u` 2>/dev/null | awk '$1 == "datadir" { print $2; exit }')"
@@ -20,12 +19,36 @@ if [ "$1" = 'mysqld' ]; then
 		mkdir -p "$DATADIR"
 		chown -R mysql:mysql "$DATADIR"
 
+		var=0
+		echo "updating my.cnf with wsrep args before install_db"
+		for i in "$@"
+		do
+			if [[ $i == *"wsrep-new"* ]]
+			then
+				echo "skipping $i"
+				args+=($i)
+				((++var))
+				continue
+			fi
+			if [[ $i == *"wsrep"* ]]
+			then
+				echo "updating $i"
+				foo=${i#--}
+				baz=${foo%=*}
+				echo "updating $baz"
+				sed -i.bak s#$baz=#$foo#g /etc/mysql/my.cnf
+				echo "$baz updated."
+			else
+				echo "skipping $i"
+				args+=($i)
+				((++var))
+			fi
+		done
+
 		echo 'Initializing'
 		mysql_install_db --user=mysql --datadir="$DATADIR" --rpm
 		echo 'Database initialized'
 
-		#"$@" --skip-networking &
-		pid="$!"
 		/etc/init.d/mysql restart
 		echo "checking if mysql is running"
 		pwd=($(cat /etc/mysql/debian.cnf | grep password | awk {"print \$3"}))
@@ -44,7 +67,6 @@ if [ "$1" = 'mysqld' ]; then
 		fi
 		echo "MySQL init successful"
 
-		pid=( pgrep mysql )
 		if [ -z "$MYSQL_INITDB_SKIP_TZINFO" ]; then
 			# sed is for https://bugs.mysql.com/bug.php?id=20545
 			mysql_tzinfo_to_sql /usr/share/zoneinfo | sed 's/Local time zone must be set--see zic manual page/FCTY/' | "${mysql[@]}" mysql
@@ -111,5 +133,5 @@ if [ "$1" = 'mysqld' ]; then
 	chown -R mysql:mysql "$DATADIR"
 
 fi
-
-exec "$@"
+echo "${args[@]}"
+exec "${args[@]}"
