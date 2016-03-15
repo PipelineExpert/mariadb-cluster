@@ -16,19 +16,19 @@ then
 	# use docker-machine to run scripts remotely.
 	eval $(docker-machine env $6)
 	docker stop $node
-	docker-machine ssh $6 'sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)'
+	#docker-machine ssh $6 'sudo mkdir -p /data && sudo rm -rf /data/* \
+	#	&& sudo groupadd -r mysql && $(sudo chown msyql:mysql /data -R)'
 else
 	docker stop $node
-	sudo rm -rf /data/*
-	sudo mkdir -p /data
-	sudo chown 999:docker /data
+	# unable to prevent permission issues with -v /data so using -v /var/lib/mysql
+	#sudo rm -rf /data/* && sudo mkdir -p /data && 	sudo chown 999:docker /data
 fi
 #another node
-docker rm $node
+docker rm -v $node
 docker pull vernonco/mariadb-cluster$tag
 docker run \
   --name $node  \
-  -v /data:/var/lib/mysql \
+  -v /var/lib/mysql \
   -v /home/ubuntu/certs:/etc/mysql/ssl \
   -e MYSQL_INITDB_SKIP_TZINFO=yes \
   -e MYSQL_ROOT_PASSWORD=$my_pwd \
@@ -44,6 +44,4 @@ docker run \
   --wsrep-cluster-name=galera-cluster \
   --wsrep-cluster-address=gcomm://$cluster_addresses \
   --wsrep-sst-auth=root:$my_pwd \
-  --wsrep-sst-donor=node1 \
-  --log-error=/dev/stderr \
-  --log_warnings=2
+  --wsrep-sst-donor=node1

@@ -30,7 +30,7 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql \
 		echo mariadb-server-$MARIADB_MAJOR mysql-server/root_password password 'unused'; \
 		echo mariadb-server-$MARIADB_MAJOR mysql-server/root_password_again password 'unused'; \
 	} | debconf-set-selections \
-	&& apt-get update \
+	&& apt-get update && apt-get upgrade -y \
 	&& apt-get install -y pwgen wget\
 		mariadb-server=$MARIADB_VERSION \
 		openssl nano netcat-traditional socat pv locate \
@@ -43,8 +43,8 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql \
 	
 	#&& sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf \
 	#&& echo 'skip-host-cache\nskip-name-resolve' | awk '{ print } $1 == "[mysqld]" && c == 0 { c = 1; system("cat") }' /etc/mysql/my.cnf > /tmp/my.cnf \
-	#&& mv /tmp/my.cnf /etc/mysql/my.cnf 	
-	#&& mkdir /var/lib/mysql \
+	#&& mv /tmp/my.cnf /etc/mysql/my.cnf \
+	#&& mkdir /var/lib/mysql 
 	
 COPY my.cnf /etc/mysql/
 

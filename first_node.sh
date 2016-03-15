@@ -27,7 +27,7 @@ docker rm $node
 docker pull vernonco/mariadb-cluster$tag
 docker run \
   --name $node \
-  -v /data:/var/lib/mysql \
+  -v /var/lib/mysql \
   -v /home/ubuntu/certs:/etc/mysql/ssl \
   -e MYSQL_INITDB_SKIP_TZINFO=yes \
   -e MYSQL_ROOT_PASSWORD=$my_pwd \
@@ -46,4 +46,4 @@ docker run \
   --wsrep-sst-auth=root:$my_pwd \
   --wsrep-sst-donor=node1 \
   --log-error=/dev/stderr \
-  --log_warnings=2
+  --log_warnings=3

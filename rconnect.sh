@@ -1,7 +1,7 @@
 #!/bin/bash
 # used to connect to remote host with host port passwd
 docker run -it --rm \
-  -v /data:/var/lib/mysql \
+  -v /var/lib/mysql \
   -v /home/ubuntu/certs:/etc/mysql/ssl \
   -e TERM=xterm \
 	vernonco/mariadb-cluster \

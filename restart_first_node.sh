@@ -1,5 +1,7 @@
 #!/bin/bash
-# used to restart/upgrade a previously initialized node
+# used to restart/upgrade a previously initialized master node
+# additional nodes are using -v /var/lib/mysql
+# use restart_additional_node.sh
 node=node"$1"
 if [ "$#" -lt 1 ]
 then
@@ -29,3 +31,5 @@ docker run \
   -p 4567-4568:4567-4568 \
   vernonco/mariadb-cluster \
   mysqld
+  # can use --wsrep_[option] to change config if needed
+  # otherwise the initial commands are in my.conf
