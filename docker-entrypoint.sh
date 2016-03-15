@@ -78,24 +78,7 @@ EOSQL
 
         echo 'FLUSH PRIVILEGES ;' >> "$tempSqlFile"
 		args+=(" --init-file=$tempSqlFile ")
-        ${args[@]} &
-		PID=$!
-		echo "checking if mysql is running"
-		mysql=( mysql -p${MYSQL_ROOT_PASSWORD} )
-		RUNNING=($(echo 'SELECT 1' | "${mysql[@]}"))
-		while [ $RUNNING -ne 1 ]; do
-			if pgrep "mysqld" ; then
-				echo "Galera init in process"
-			else
-				echo >&2 'Galera init process failed.'
-				exit
-			fi
-			sleep 10
-			RUNNING=($(echo 'SELECT 1' | "${mysql[@]}"))
-		done
-		echo
-		echo 'MySQL init process done. Ready for connections.'
-		echo
+        exec ${args[@]}
 	fi
 else
 	chown -R mysql:mysql "$DATADIR"
