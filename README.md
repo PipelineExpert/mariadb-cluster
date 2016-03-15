@@ -1,8 +1,9 @@
 # mariadb-cluster
-Create secure docker containers running a galera cluster accross networks
-Use at your own risk and modify paths/my.cnf as desired for security and setings
+Create secure docker containers running a galera cluster accross networks.
+* Use at your own risk and modify paths/my.cnf as desired for security and setings.
+* You will need to open ports (3306, 4444, 4567-4568, 4567/udp) from the IPs in the host firewall
 
-Docker container can be pulled from vernonco/mariadb-cluster
+Docker container can be pulled from stuartz/mariadb-cluster
 
 **Currently using Mariadb 10.1.12.**
 Modified the official Mariadb docker container to create a secure ssl cluster:
@@ -11,6 +12,7 @@ Modified the official Mariadb docker container to create a secure ssl cluster:
 * my.cnf  includes mandatory galera settings including bind-address   = 0.0.0.0 and ssl settings
 * removed --skip-networking from entrypoint.sh
 * exposed necessary ports for Galera
+* initial wsrep options passed are written to my.cnf
 
 **SSL certificates**
 You can generate self-signed certificate with `generate_certs.sh`, and -v /path/to/certs/:/etc/mysql/ssl/
@@ -56,5 +58,5 @@ export cluster_addresses="10.1.1.3,10.1.1.4, etc."
 **MySQL connect to node1 (same as connect.sh)**
 `docker run -it --link node1:mysql --rm -e TERM=xterm\`
 `	-v /var/lib/mysql -v /path-to-certs/:/etc/mysql/ssl \`
-`	vernonco/mariadb-cluster \`
+`	stuartz/mariadb-cluster \`
 `	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p'`
