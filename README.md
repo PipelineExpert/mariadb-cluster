@@ -1,7 +1,8 @@
 # mariadb-cluster
-work in progress: create secure docker containers running a galera cluster accross networks
+Create secure docker containers running a galera cluster accross networks
+Use at your own risk and modify paths/my.cnf as desired for security and setings
 
-pull container from vernonco/mariadb-cluster
+Docker container can be pulled from vernonco/mariadb-cluster
 
 **Currently using Mariadb 10.1.12.**
 Modified the official Mariadb docker container to create a secure ssl cluster:
@@ -12,7 +13,7 @@ Modified the official Mariadb docker container to create a secure ssl cluster:
 * exposed necessary ports for Galera
 
 **SSL certificates**
-You can generate self-signed certificate, and -v /path/to/certs/:/etc/mysql/ssl/:ro
+You can generate self-signed certificate with `generate_certs.sh`, and -v /path/to/certs/:/etc/mysql/ssl/
 Following naming convention in galera.cnf for certs:
 `[mysqld]`
 `ssl-ca=/etc/mysql/ssl/ca-cert.pem`
@@ -36,19 +37,23 @@ export cluster_addresses="10.1.1.3,10.1.1.4, etc."
 **Scripts from https://github.com/stuartz/mariadb-cluster**
 
 ***first node***
-`sh first_node.sh _host_IP_ $m_pwd _node#_ $cluster_addresses [docker-machine name]`
+`sh first_node.sh _host_IP_ $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine name ]`
 
 ***other nodes (change this_node_IP for each)***
-`sh node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [docker-machine name]`
+`sh additional_node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine name ]`
 
 ***restart/upgrade a node***
-`sh restart_node.sh _node#_ [docker-machine name]`
+`sh restart_first_node.sh _node#_ [ ":tag" docker-machine name]`
+`sh restart_additional_node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine name ]`
 
-***connect to node1***
-`sh connect.sh`
+***connect to local node$1***
+`sh connect.sh _node#_ _root_passwd_`
+
+***connect to remote node***
+`sh rconnect.sh _host_IP_ _port_ _root_passwd_`
 
 
-**MySQL connect to node1**
+**MySQL connect to node1 (same as connect.sh)**
 `docker run -it --link node1:mysql --rm -e TERM=xterm\`
 `	-v /var/lib/mysql -v /path-to-certs/:/etc/mysql/ssl \`
 `	vernonco/mariadb-cluster \`

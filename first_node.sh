@@ -24,7 +24,7 @@ else
 fi
 #first node
 docker rm $node
-docker pull vernonco/mariadb-cluster$tag
+docker pull stuartz/mariadb-cluster$tag
 docker run \
   --name $node \
   -v /var/lib/mysql \
@@ -37,7 +37,7 @@ docker run \
   -p 3306:3306 \
   -p 4444:4444 \
   -p 4567-4568:4567-4568 \
-  vernonco/mariadb-cluster$tag \
+  stuartz/mariadb-cluster$tag \
   --wsrep-new-cluster \
   --wsrep-node-address=$this_node_IP \
   --wsrep-node-name=$node \

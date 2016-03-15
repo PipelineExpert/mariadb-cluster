@@ -18,7 +18,7 @@ fi
 #first node
 docker stop $node
 docker rm $node
-docker pull vernonco/mariadb-cluster:$2
+docker pull stuartz/mariadb-cluster:$2
 docker run \
   --name $node \
   -v /data:/var/lib/mysql \
@@ -29,7 +29,7 @@ docker run \
   -p 4444:4444 \
   -p 4567:4567/udp \
   -p 4567-4568:4567-4568 \
-  vernonco/mariadb-cluster \
+  stuartz/mariadb-cluster \
   mysqld
   # can use --wsrep_[option] to change config if needed
   # otherwise the initial commands are in my.conf

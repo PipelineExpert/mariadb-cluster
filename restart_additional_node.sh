@@ -2,6 +2,17 @@
 # used to start/restart a secondary node
 # this copies over the volume of the previous node if it exists
 # to start a fresh node where one exists, use additional_node.sh
+this_node_IP="$1"
+my_pwd="$2"
+node=node"$3"
+cluster_addresses=$4
+tag=$5
+if [ "$#" -lt 4 ]
+then
+	echo "need 4 args( IP pwd node# cluster_addresses)... 10.0.0.3 password 1 "10.1.1.3,10.1.1.4,10.1.1.5" [tag docker-machine-name]"
+	exit
+fi
+
 if [ "$#" -gt 5 ]
 then
 	# use docker-machine to run scripts remotely.
@@ -20,7 +31,7 @@ if [ $? -neq 1 ]; then
 	# volumenode is known...copy volume over to new container
 	docker run --rm --volumes-from $node -v $(pwd):/backup ubuntu tar cvf /backup/backup.tar /var/lib/mysql
 	docker rm -v $node
-	docker pull vernonco/mariadb-cluster$tag
+	docker pull stuartz/mariadb-cluster$tag
 	docker run \
 	  --name $node  \
 	  -v /var/lib/mysql \
@@ -29,7 +40,7 @@ if [ $? -neq 1 ]; then
 	  -p 3306:3306 \
 	  -p 4444:4444 \
 	  -p 4567-4568:4567-4568 \
-	  vernonco/mariadb-cluster$tag \
+	  stuartz/mariadb-cluster$tag \
 	  bash
 	#copy volume data back into new container
 	docker run --rm --volumes-from dbstore2 -v $(pwd):/backup ubuntu bash -c "cd /var/lib/mysql && tar xvf /backup/backup.tar --strip 1"
@@ -39,7 +50,7 @@ if [ $? -neq 1 ]; then
 else
 	#start another node
 	docker rm -v $node
-	docker pull vernonco/mariadb-cluster$tag
+	docker pull stuartz/mariadb-cluster$tag
 	docker run \
 	  --name $node  \
 	  -v /var/lib/mysql \
@@ -51,7 +62,7 @@ else
 	  -p 3306:3306 \
 	  -p 4444:4444 \
 	  -p 4567-4568:4567-4568 \
-	  vernonco/mariadb-cluster$tag \
+	  stuartz/mariadb-cluster$tag \
 	  mysqld \
 	  --wsrep-node-address=$this_node_IP \
 	  --wsrep-node-name=$node \
