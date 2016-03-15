@@ -16,9 +16,13 @@ then
 	# use docker-machine to run scripts remotely.
 	eval $(docker-machine env $6)
 fi
-#another node
+
+# create a fresh db_volume
+docker stop db_volume
 docker rm -v db_volume
 docker run -d -v /var/lib/mysql --name db_volume  debian:jessie
+
+# create another fesh node
 docker stop $node
 docker rm -v $node
 docker pull stuartz/mariadb-cluster$tag
