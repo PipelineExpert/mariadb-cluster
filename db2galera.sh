@@ -1,12 +1,20 @@
 #!/bin/bash
+username="$1"
+userpasswd="$2"
+galera_pwd="$3"
+if [ "$#" -lt 3 ]
+then
+	echo "need 3 args(mariadbuser mariadbpwd galerapwd)"
+	exit
+fi
 # stop mariadb on first server before running this and update applications to new access point
 eval $(docker-machine env galera-local)
 #create users.sql
-python get_user.py username userpasswd &
+python get_user.py $username $userpasswd &
 # copy users.sql to node1 and run
 docker cp /tmp/users.sql node1:tmp
-time docker exec -it node1 mysql -u root -p$my_pwd -e "use mysql;SET autocommit=0 ; source /tmp/users.sql; COMMIT; SET autocommit=1; "
-databases=( "$( mysql -h10.1.1.49 -u root -p -Bse 'show databases;')" )
+time docker exec -it node1 mysql -u root -p$galera_pwd -e "use mysql;SET autocommit=0 ; source /tmp/users.sql; COMMIT; SET autocommit=1; "
+databases=( "$( mysql -h10.1.1.49 -u "$username" -p"$userpasswd" -Bse 'show databases;')" )
 databases= \'$databases\'
 echo "$databases"
 
@@ -26,11 +34,11 @@ do
 	docker cp /tmp/db_schema.sql node1:tmp
 	time docker cp /tmp/db_data.sql node1:tmp
 	# create the database
-	docker exec -d node1 mysql -u root -pwhoh00! -e "DROP DATABASE IF EXISTS $db_name; CREATE DATABASE $db_name;"
+	docker exec -d node1 mysql -u root -p$galera_pwd -e "DROP DATABASE IF EXISTS $db_name; CREATE DATABASE $db_name;"
 	# create the schema
 	echo "importing *.sql for $db_name into galera"
-	time docker exec -it node1 mysql -u root -p$my_pwd -e "use $db_name;SET autocommit=0;source /tmp/db_schema.sql ; COMMIT;"
+	time docker exec -it node1 mysql -u root -p$galera_pwd -e "use $db_name;SET autocommit=0;source /tmp/db_schema.sql ; COMMIT;"
 	# load in the data
-	time docker exec -it node1 mysql -u root -p$my_pwd -e "use $db_name; source /tmp/db_data.sql ; COMMIT ;SET autocommit=1;"
+	time docker exec -it node1 mysql -u root -p$galera_pwd -e "use $db_name; source /tmp/db_data.sql ; COMMIT ;SET autocommit=1;"
     fi
 done
