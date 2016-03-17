@@ -5,7 +5,7 @@ eval $(docker-machine env galera-local)
 python get_user.py username userpasswd &
 # copy users.sql to node1 and run
 docker cp /tmp/users.sql node1:tmp
-time docker exec -it node1 mysql -u root -p$my_pwd -e "use mysql;SET autocommit=0 ; source /tmp/user.sql; COMMIT; SET autocommit=1; "
+time docker exec -it node1 mysql -u root -p$my_pwd -e "use mysql;SET autocommit=0 ; source /tmp/users.sql; COMMIT; SET autocommit=1; "
 databases=( "$( mysql -h10.1.1.49 -u root -p -Bse 'show databases;')" )
 databases= \'$databases\'
 echo "$databases"

@@ -15,6 +15,8 @@ for i in iter(users.stdout.readline, b''):
 		headers = i
 		index+=1
 	else:
+		if 'root' in i or 'debian-sys-maint' in i:
+			continue
 		i = i.replace( "\t", "','")
 		i = "'" + i + "'"
 		mysql_users+=[i]
