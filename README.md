@@ -2,17 +2,18 @@
 Create secure docker containers running a galera cluster accross networks.
 * Use at your own risk and modify paths/my.cnf as desired for security and setings.
 * You will need to open ports (3306, 4444, 4567-4568, 4567/udp) from the IPs in the host firewall
+* see iptables_sec.sh
 
 Docker container can be pulled from stuartz/mariadb-cluster
 
 **Currently using Mariadb 10.1.12.**
 Modified the official Mariadb docker container to create a secure ssl cluster:
 * installed openssl and xtrabackup
-* adding my.cnf to /etc/mysql/my.cnf
+* adding my.cnf to /etc/mysql/my.cnf or add -v my.cnf:/etc/mysql/my.cnf
 * my.cnf  includes mandatory galera settings including bind-address   = 0.0.0.0 and ssl settings
 * removed --skip-networking from entrypoint.sh
 * exposed necessary ports for Galera
-* initial wsrep options passed are written to my.cnf
+* initial wsrep options passed are written to my.cnf for persistence with volume container
 
 **SSL certificates**
 You can generate self-signed certificate with `generate_certs.sh`, and -v /path/to/certs/:/etc/mysql/ssl/
@@ -30,6 +31,7 @@ Following naming convention in galera.cnf for certs:
 `tcert=/etc/mysql/ssl/server-cert.pem`
 `tkey=/etc/mysql/ssl/server-key.pem`
 * see http://galeracluster.com/documentation-webpages/sslcert.html*
+* modify and use send_certs.sh to send to docker-machines the nodes will run on*
 
 COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran at init.
 
@@ -39,14 +41,16 @@ export cluster_addresses="10.1.1.3,10.1.1.4, etc."
 **Scripts from https://github.com/stuartz/mariadb-cluster**
 
 ***first node***
-`sh first_node.sh _host_IP_ $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine name ]`
+# named node1
+`sh first_node.sh _host_IP_ $m_pwd  [ ":tag" docker-machine name ]`
 
 ***other nodes (change this_node_IP for each)***
-`sh additional_node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine name ]`
+# named node`#`
+`sh additional_node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine_name ]`
 
 ***restart/upgrade a node***
-`sh restart_first_node.sh _node#_ [ ":tag" docker-machine name]`
-`sh restart_additional_node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine name ]`
+`sh restart_first_node.sh [ ":tag" docker-machine name ]`
+`sh restart_additional_node.sh  _node#_  [ ":tag" docker-machine_name ]`
 
 ***connect to local node$1***
 `sh connect.sh _node#_ _root_passwd_`

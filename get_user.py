@@ -1,8 +1,11 @@
 #!/bin/python
+# used to create users.sql to migrate users from old database to cluster 
+# args-- user userpwd hostIP
+
 from subprocess import Popen, PIPE
 import sys
 users=( Popen(['/bin/sh', '-c',
-			"mysql -h10.1.1.49 -u " + sys.argv[1] + " -p" + sys.argv[2] + " -Be 'use mysql;select * from user;'"
+			"mysql -h " + sys.argv[3] + " -u " + sys.argv[1] + " -p" + sys.argv[2] + " -Be 'use mysql;select * from user;'"
 			], stdout=PIPE) )
 index=0
 mysql_users=[]

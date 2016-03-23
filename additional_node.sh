@@ -18,9 +18,8 @@ then
 fi
 
 # create a fresh db_volume
-docker stop db_volume
 docker rm -v db_volume
-docker run -d -v /var/lib/mysql --name db_volume  debian:jessie
+docker create -v /var/lib/mysql --name db_volume  debian:jessie
 
 # create another fesh node
 docker stop $node
@@ -28,7 +27,7 @@ docker rm -v $node
 docker pull stuartz/mariadb-cluster$tag
 docker run \
   --name $node  \
-  --volumes-from db-volume \
+  --volumes-from db_volume \
   -v /home/ubuntu/certs:/etc/mysql/ssl \
   -e MYSQL_INITDB_SKIP_TZINFO=yes \
   -e MYSQL_ROOT_PASSWORD=$my_pwd \

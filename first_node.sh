@@ -1,19 +1,20 @@
 #!/bin/bash
+# used to initiate first node with phpmyadmin
 this_node_IP="$1"
 my_pwd="$2"
-node=node"$3"
-cluster_addresses=$4
-tag=$5
-if [ "$#" -lt 4 ]
+node=node1
+cluster_addresses=' '
+tag=$3
+if [ "$#" -lt 2 ]
 then
-	echo "need 4 args( IP pwd node# cluster_addresses)... 10.0.0.3 password 1 "10.1.1.3,10.1.1.4,10.1.1.5" [tag docker-machine-name]"
+	echo "need 2 args( IP pwd )... 10.0.0.3 password  [tag docker-machine-name]"
 	exit
 fi
 
-if [ "$#" -gt 5 ]
+if [ "$#" -gt 3 ]
 then
 	# use docker-machine to run scripts remotely.
-	eval $(docker-machine env $6)
+	eval $(docker-machine env $4)
 	docker stop $node
 	docker-machine ssh $6 'sudo mkdir -p /data && sudo rm -rf /data/* && $(sudo chown 999:docker /data -R)'
 else
@@ -27,7 +28,7 @@ docker rm $node
 docker pull stuartz/mariadb-cluster$tag
 docker run \
   --name $node \
-  -v /var/lib/mysql \
+  -v /data:/var/lib/mysql \
   -v /home/ubuntu/certs:/etc/mysql/ssl \
   -e MYSQL_INITDB_SKIP_TZINFO=yes \
   -e MYSQL_ROOT_PASSWORD=$my_pwd \
@@ -47,3 +48,11 @@ docker run \
   --wsrep-sst-donor=node1 \
   --log-error=/dev/stderr \
   --log_warnings=3
+
+# phpmyadmin container
+docker stop myadmin
+docker rm myadmin
+docker run --name myadmin \
+	-d --link node1:db \
+	-p 8080:80 \
+	phpmyadmin/phpmyadmin

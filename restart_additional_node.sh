@@ -2,42 +2,32 @@
 # used to start/restart a secondary node
 # this links the volume of the previous db_volume
 # to start a fresh node where one exists, use additional_node.sh
-this_node_IP="$1"
-my_pwd="$2"
-node=node"$3"
-cluster_addresses=$4
-tag=$5
-if [ "$#" -lt 4 ]
+node=node"$1"
+tag=$2
+if [ "$#" -lt 1 ]
 then
-	echo "need 4 args( IP pwd node# cluster_addresses)... 10.0.0.3 password 1 "10.1.1.3,10.1.1.4,10.1.1.5" [tag docker-machine-name]"
+	echo "need 1 args( node# [tag docker-machine-name])"
 	exit
 fi
 
-if [ "$#" -gt 5 ]
+if [ "$#" -gt 2 ]
 then
 	# use docker-machine to run scripts remotely.
-	eval $(docker-machine env $6)
+	eval $(docker-machine env $3)
 fi
 #restart another node
 docker stop $node
 docker rm -v $node
-docker pull stuartz/mariadb-cluster$tag
+docker pull vernonco/mariadb-cluster:$tag
 docker run \
   --name $node  \
-  --volumes-from db-volume \
+  --volumes-from db_volume \
   -v /home/ubuntu/certs:/etc/mysql/ssl \
-  -e MYSQL_INITDB_SKIP_TZINFO=yes \
-  -e MYSQL_ROOT_PASSWORD=$my_pwd \
+  -v /home/ubuntu/my.cnf:/etc/mysql/my.cnf \
   -e TERM=xterm \
   -d \
-  -p 3306:3306 \
+  -p 3308:3306 \
   -p 4444:4444 \
   -p 4567-4568:4567-4568 \
-  stuartz/mariadb-cluster$tag \
-  mysqld \
-  --wsrep-node-address=$this_node_IP \
-  --wsrep-node-name=$node \
-  --wsrep-cluster-name=galera-cluster \
-  --wsrep-cluster-address=gcomm://$cluster_addresses \
-  --wsrep-sst-auth=root:$my_pwd \
-  --wsrep-sst-donor=node1
+  vernonco/mariadb-cluster:$tag \
+  mysqld
