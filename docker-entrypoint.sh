@@ -79,7 +79,10 @@ EOSQL
         echo 'FLUSH PRIVILEGES ;' >> "$tempSqlFile"
 		args+=(" --init-file=$tempSqlFile ")
         exec ${args[@]}
+	else
+		exec "$@"
 	fi
+
 else
 	chown -R mysql:mysql "$DATADIR"
 	echo "$@"
