@@ -64,3 +64,6 @@ export cluster_addresses="10.1.1.3,10.1.1.4, etc."
 `	-v /var/lib/mysql -v /path-to-certs/:/etc/mysql/ssl \`
 `	stuartz/mariadb-cluster \`
 `	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p'`
+
+#IST sync on AWS or hosted service that has private ip and public ip
+`wating for Galera version 25.3.16 to add wsrep_provider_options="ist.bind=<privateIP>;..."`
