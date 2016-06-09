@@ -18,17 +18,29 @@ Modified the official Mariadb docker container to create a secure ssl cluster:
 **SSL certificates**
 You can generate self-signed certificate with `generate_certs.sh`, and -v /path/to/certs/:/etc/mysql/ssl/
 Following naming convention in galera.cnf for certs:
+
 `[mysqld]`
+
 `ssl-ca=/etc/mysql/ssl/ca-cert.pem`
+
 `ssl-cert=/etc/mysql/ssl/server-cert.pem`
+
 `ssl-key=/etc/mysql/ssl/server-key.pem`
+
 `[mysql]`
+
 `ssl-ca = /etc/mysql/ssl/ca-cert.pem`
+
 `ssl-key = /etc/mysql/ssl/client-key.pem`
+
 `ssl-cert =/etc/mysql/ssl/client-cert.pem`
+
 `[sst]`
+
 `tca=/etc/mysql/ssl/ca-cert.pem`
+
 `tcert=/etc/mysql/ssl/server-cert.pem`
+
 `tkey=/etc/mysql/ssl/server-key.pem`
 * see http://galeracluster.com/documentation-webpages/sslcert.html*
 * modify and use send_certs.sh to send to docker-machines the nodes will run on*
