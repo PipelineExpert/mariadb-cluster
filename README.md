@@ -52,31 +52,40 @@ COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran 
 
 `export cluster_addresses="10.1.1.3,10.1.1.4, etc."`
 
-***first node***
+**first node**
+
 ** named node1**
+
 `sh first_node.sh _host_IP_ $m_pwd  [ ":tag" docker-machine name ]`
 
-***other nodes (change this_node_IP for each)***
+**other nodes (change this_node_IP for each)**
+
 ** named node`#`**
+
 `sh additional_node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine_name ]`
 
-***restart/upgrade a node***
+**restart/upgrade a node**
+
 `sh restart_first_node.sh [ ":tag" docker-machine name ]`
 
 `sh restart_additional_node.sh  _node#_  [ ":tag" docker-machine_name ]`
 
-***connect to local node$1***
+**connect to local node$1**
+
 `sh connect.sh _node#_ _root_passwd_`
 
-***connect to remote node***
+**connect to remote node**
+
 `sh rconnect.sh _host_IP_ _port_ _root_passwd_`
 
 
 **MySQL connect to node1 (same as connect.sh)**
+
 `docker run -it --link node1:mysql --rm -e TERM=xterm\`
 `	-v /var/lib/mysql -v /path-to-certs/:/etc/mysql/ssl \`
 `	stuartz/mariadb-cluster \`
 `	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p'`
 
 #IST sync on AWS or hosted service that has private ip and public ip
+
 `wating for Galera version 25.3.16 to add wsrep_provider_options="ist.bind=<privateIP>;..."`
