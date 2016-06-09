@@ -17,7 +17,7 @@ MAINTAINER "Stuart Zurcher" <https://github.com/stuartz-VernonCo>
 # don't reverse lookup hostnames, they are usually another container
 
 ENV MARIADB_MAJOR 10.1
-ENV MARIADB_VERSION 10.1.12+maria-1~jessie
+ENV MARIADB_VERSION 10.1.14+maria-1~jessie
 RUN groupadd -r mysql && useradd -r -g mysql mysql \
 	&& apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 199369E5404BD5FC7D2FE43BCBCB082A1BB943DB \
 	&& echo "deb http://ftp.osuosl.org/pub/mariadb/repo/$MARIADB_MAJOR/debian jessie main" > /etc/apt/sources.list.d/mariadb.list \
