@@ -2,9 +2,9 @@
 Create secure docker containers running a galera cluster accross networks.
 * Use at your own risk and modify paths/my.cnf as desired for security and setings.
 * You will need to open ports (3306, 4444, 4567-4568, 4567/udp) from the IPs in the host firewall
-* see iptables_sec.sh
+* see iptables_sec.sh for securing host and docker container
 
-Docker container can be pulled from stuartz/mariadb-cluster
+Docker container can be pulled from stuartz/mariadb-cluster:latest or vernonco/mariadb-cluster:stable
 
 **Currently using Mariadb 10.1.12.**
 Modified the official Mariadb docker container to create a secure ssl cluster:
@@ -35,10 +35,19 @@ Following naming convention in galera.cnf for certs:
 
 COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran at init.
 
-export my_pw="somepwd"
-export cluster_addresses="10.1.1.3,10.1.1.4, etc."
 
 **Scripts from https://github.com/stuartz/mariadb-cluster**
+
+*docker-compose examples*
+**start nodes**
+`docker-compose -f docker_compose_start.yml up -d`
+
+**restart or update nodes**
+`docker-compose up -d`
+
+*script examples*
+`export my_pw="somepwd"`
+`export cluster_addresses="10.1.1.3,10.1.1.4, etc."`
 
 ***first node***
 # named node1
