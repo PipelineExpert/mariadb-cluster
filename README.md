@@ -38,27 +38,31 @@ COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran 
 
 **Scripts from https://github.com/stuartz/mariadb-cluster**
 
-*docker-compose examples*
+#docker-compose examples
 **start nodes**
+
 `docker-compose -f docker_compose_start.yml up -d`
 
 **restart or update nodes**
+
 `docker-compose up -d`
 
-*script examples*
+#script examples
 `export my_pw="somepwd"`
+
 `export cluster_addresses="10.1.1.3,10.1.1.4, etc."`
 
 ***first node***
-# named node1
+** named node1**
 `sh first_node.sh _host_IP_ $m_pwd  [ ":tag" docker-machine name ]`
 
 ***other nodes (change this_node_IP for each)***
-# named node`#`
+** named node`#`**
 `sh additional_node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine_name ]`
 
 ***restart/upgrade a node***
 `sh restart_first_node.sh [ ":tag" docker-machine name ]`
+
 `sh restart_additional_node.sh  _node#_  [ ":tag" docker-machine_name ]`
 
 ***connect to local node$1***
