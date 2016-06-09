@@ -4,10 +4,13 @@
 set -eo pipefail
 # Get config
 DATADIR="$(mysqld --verbose --help --log-bin-index=`mktemp -u` 2>/dev/null | awk '$1 == "datadir" { print $2; exit }')"
-echo $DATADIR
+ls -l $DATADIR
 # if command starts with an option, prepend mysqld
+# STARTING WITHOUT mysqld runs through init process if no dir/mysql
 if [ "${1:0:1}" = '-' ]; then
 	set -- mysqld "$@"
+	sleep 10
+	# following doesn't always catch a previous mysql, put sleep to help
 	if [ ! -d "$DATADIR/mysql" ]; then
 		if [ -z "$MYSQL_ROOT_PASSWORD" -a -z "$MYSQL_ALLOW_EMPTY_PASSWORD" -a -z "$MYSQL_RANDOM_ROOT_PASSWORD" ]; then
 			echo >&2 'error: database is uninitialized and password option is not specified '
@@ -84,7 +87,7 @@ EOSQL
 	fi
 
 else
-	chown -R mysql:mysql "$DATADIR"
+
 	echo "$@"
 	exec "$@"
 fi

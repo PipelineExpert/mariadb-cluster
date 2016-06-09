@@ -1,5 +1,10 @@
 #!/bin/bash
 # used to restart/upgrade a previously initialized master node
+
+# easier to use docker-machine, docker-compose and local my.cnf volume (see docker-compose.yml)
+ # eval $(docker-machine env machine_name)
+ # docker-compose up -d
+
 # additional nodes are using -v /var/lib/mysql
 # use restart_additional_node.sh
 node=node1

@@ -1,5 +1,9 @@
 #!/bin/bash
 # used to initiate first node with phpmyadmin
+# easier to use docker-machine, docker-compose and local my.cnf volume (see docker_compose_start.yml)
+ # eval $(docker-machine env machine_name)
+ # docker-compose -f docker_compose_start.yml up -d
+
 this_node_IP="$1"
 my_pwd="$2"
 node=node1

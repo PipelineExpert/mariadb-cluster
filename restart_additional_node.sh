@@ -1,5 +1,10 @@
 #!/bin/bash
 # used to start/restart a secondary node
+
+# easier to use docker-machine, docker-compose and local my.cnf volume (see docker-compose.yml)
+ # eval $(docker-machine env machine_name)
+ # docker-compose up -d
+
 # this links the volume of the previous db_volume
 # to start a fresh node where one exists, use additional_node.sh
 node=node"$1"

@@ -1,8 +1,14 @@
 #!/bin/bash
-# used to connect to node$1
-docker run -it --link node$1:mysql --rm \
+# used to connect to galera_node
+if [ "$#" -lt 2 ]
+then
+	echo "need 2 args( root password, and machine_name)
+	exit
+fi
+eval $(docker-machine env $2)
+docker run -it --link galera_node:mysql --rm \
   -v /data:/var/lib/mysql \
   -v /home/ubuntu/certs:/etc/mysql/ssl \
   -e TERM=xterm \
-	stuartz/mariadb-cluster \
-	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p$2'
+	vernonco/mariadb-cluster:stable \
+	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p$1'

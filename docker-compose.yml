@@ -1,0 +1,34 @@
+node:
+  #build: .
+  image: vernonco/mariadb-cluster:stable
+  container_name: galera_node
+  ports:
+    - "3306:3306"
+    - "4444:4444"
+    - "4567:4567"
+    - "4567:4567/udp"
+    - "4568:4568"
+  environment:
+    - TERM=xterm
+  volumes:
+    - /var/lib/docker/data:/var/lib/mysql:Z
+    - /path_to/certs:/etc/mysql/ssl
+    - /path_to/my.cnf:/etc/mysql/my.cnf
+  log_opt:
+    max-size: "100k"
+    max-file: "20"
+  restart: always
+  command: mysqld
+
+phpmyadmin:
+  image: phpmyadmin/phpmyadmin
+  container_name: myadmin
+  ports:
+    - "80:80"
+  links:
+    - node:db
+
+# **** used to re-start nodes only!  use start_docker-compose.yml to start node  ********
+# put local my.cnf on machine with wsrep option for master or nodes
+# log opt prevent log files from getting out of hand
+# TERM allows nanompose.yml to start node

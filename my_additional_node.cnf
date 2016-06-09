@@ -1,3 +1,6 @@
+***SET innodb-buffer-pool-size (default 128M)To @ 80% of memory then divide by 1G to set innodb-buffer-instances (default is 8)
+# set wsrep options below for master node
+
 [client]
 port		= 3306
 socket		= /var/run/mysqld/mysqld.sock
@@ -33,31 +36,33 @@ max_binlog_size     	= 100M
 default-storage-engine=InnoDB
 innodb-autoinc-lock-mode=2
 innodb-flush-log-at-trx-commit=0
-innodb-buffer-pool-size=122M
 innodb-doublewrite=1
 innodb-flush-method=O_DIRECT
 
+# innodb-buffer-pool-size=128M
+# innodb-buffer-instances=8
+
 log-bin					=ON
 binlog-format			=ROW
-
-query-cache-size=0
-query_cache_type=0
-
-# wsrep settings *********
 wsrep-provider			=/usr/lib/galera/libgalera_smm.so
 wsrep-sst-method		=xtrabackup-v2
 wsrep_on				=ON 
+query-cache-size=0
+query_cache_type=0
+
+# **** galera 25.3.16 will have option to add  wsrep_provider_options="ist.recv_bind=fqdn or ip;...."
 wsrep_provider_options="socket.ssl_key=/etc/mysql/ssl/server-key.pem;socket.ssl_cert=/etc/mysql/ssl/server-cert.pem;socket.ssl_ca=/etc/mysql/ssl/ca-cert.pem"
-# following to be changed by docker-entrypoint.sh before mysql_install_db
-wsrep-node-address=
-wsrep-node-name=
-wsrep-cluster-name=
-wsrep-cluster-address=
-wsrep-sst-auth=
-wsrep-sst-donor=
+wsrep-sst-donor=node1
+
+# **** following needs changed
+wsrep-node-address="fqdn or ip"
+wsrep-node-name=node2
+wsrep-cluster-name="cluster_name"
+wsrep-cluster-address="gcomm://fqdn's; or ip's"
+wsrep-sst-auth="sst_user:sst_pwd"
+
 
 # For generating SSL certificates I recommend the OpenSSL GUI "tinyca".
-# server ssl
 ssl-ca	=/etc/mysql/ssl/ca-cert.pem
 ssl-cert=/etc/mysql/ssl/server-cert.pem
 ssl-key	=/etc/mysql/ssl/server-key.pem
@@ -71,7 +76,7 @@ socket		= /var/run/mysqld/mysqld.sock
 nice		= 0
 
 
-# sst Configuration
+# xtrabackup Configuration
 [sst]
 compressor="gzip"
 decompressor="gzip -dc"
@@ -90,3 +95,7 @@ ssl-cert 	= /etc/mysql/ssl/client-cert.pem
 quick
 quote-names
 max_allowed_packet	= 16M
+
+[isamchk]
+key_buffer		= 16M
+

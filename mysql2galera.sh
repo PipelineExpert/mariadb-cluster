@@ -1,4 +1,6 @@
 #!/bin/bash
+#used to migrate a mysql db to galera
+
 username="$1"
 userpasswd="$2"
 galera_pwd="$3"
