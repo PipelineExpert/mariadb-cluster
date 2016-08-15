@@ -8,7 +8,7 @@ Create secure docker containers running a galera cluster accross networks.
 
 Docker container can be pulled from stuartz/mariadb-cluster:latest or vernonco/mariadb-cluster:stable
 
-**Currently using Mariadb 10.1.14.**
+**Currently using Mariadb 10.1.16.**
 Modified the official Mariadb docker container to create a secure ssl cluster:
 * installed openssl and xtrabackup
 * adding my.cnf to /etc/mysql/my.cnf or add -v my.cnf:/etc/mysql/my.cnf
