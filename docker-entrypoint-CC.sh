@@ -1,4 +1,5 @@
 #!/bin/bash
+# added supervisord command at end for ssh access from Cluster Control
 # a mix of the official docker-entrypoint.sh and that of
 #    https://github.com/diegomarangoni/docker-mariadb-galera
 set -eo pipefail
@@ -112,3 +113,5 @@ for f in /docker-entrypoint-initdb.d/repeat/*; do
 	esac
 	echo
 done
+
+/usr/bin/supervisord

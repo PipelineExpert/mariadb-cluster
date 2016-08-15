@@ -30,5 +30,10 @@ phpmyadmin:
 
 # **** used to re-start nodes only!  use start_docker-compose.yml to start node  ********
 # put local my.cnf on machine with wsrep option for master or nodes
+# put on machine running weave and
+# docker-compose $(weave config) -pgalera_ up
+
 # log opt prevent log files from getting out of hand
-# TERM allows nanompose.yml to start node
+# TERM allows nano
+# phpadmin only needed on one node
+# if need https to phpadmin add nginx and port phpmyadmin 127.0.0.1:80:80

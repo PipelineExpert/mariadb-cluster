@@ -2,11 +2,13 @@
 Create secure docker containers running a galera cluster accross networks.
 * Use at your own risk and modify paths/my.cnf as desired for security and setings.
 * You will need to open ports (3306, 4444, 4567-4568, 4567/udp) from the IPs in the host firewall
+* if using weave, open ports (6783-6784/udp, 6783, 2376)
+* if all nodes are on AWS, open all ports between security group on VPC for simplicity
 * see iptables_sec.sh for securing host and docker container
 
 Docker container can be pulled from stuartz/mariadb-cluster:latest or vernonco/mariadb-cluster:stable
 
-**Currently using Mariadb 10.1.12.**
+**Currently using Mariadb 10.1.14.**
 Modified the official Mariadb docker container to create a secure ssl cluster:
 * installed openssl and xtrabackup
 * adding my.cnf to /etc/mysql/my.cnf or add -v my.cnf:/etc/mysql/my.cnf
@@ -50,16 +52,23 @@ COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran 
 
 **Scripts from https://github.com/stuartz/mariadb-cluster**
 
-#docker-compose examples
+#docker-compose examples using weave for encrypted connection between nodes
+# see install_compose_weave.sh  and weave_launch.sh
 **start nodes**
 
-`docker-compose -f docker_compose_start.yml up -d`
+`docker-compose $(weave config) -f docker-compose_start.yml -p galera_ up -d`
 
 **restart or update nodes**
 
-`docker-compose up -d`
+`docker-compose $(weave config) -p galera_ up -d`
 
-#script examples
+**backup maintenance for nodes**
+
+`cluster_status.sh, snap_create.sh and snap_delete.py on cron jobs`
+
+#docker script examples are no longer maintained--left for reference
+# using local my.cnf copy and compose and weave instead
+
 `export my_pw="somepwd"`
 
 `export cluster_addresses="10.1.1.3,10.1.1.4, etc."`
@@ -99,6 +108,7 @@ COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran 
 `	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p'`
 
 # IST sync on AWS
+# was able to use weave with encrypted pipes for IST
 **or hosted service that has private ip and public ip**
 
 `wating for Galera version 25.3.16 to add wsrep_provider_options="ist.bind=<privateIP>;..."`

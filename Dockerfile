@@ -31,7 +31,7 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql \
 		echo mariadb-server-$MARIADB_MAJOR mysql-server/root_password_again password 'unused'; \
 	} | debconf-set-selections \
 	&& apt-get update && apt-get upgrade -y \
-	&& apt-get install -y pwgen wget\
+	&& apt-get install -y pwgen wget ntp ntpdate\
 		mariadb-server=$MARIADB_VERSION \
 		openssl nano netcat-traditional socat pv locate \
 	&& wget https://repo.percona.com/apt/percona-release_0.1-3.jessie_all.deb \
@@ -51,6 +51,7 @@ COPY my_master.cnf /etc/mysql/my.cnf
 
 COPY docker-entrypoint.sh /
 # added chmod because of weird permission issue
-RUN mkdir -p /docker-entrypoint-initdb.d && chmod 770 /docker-entrypoint.sh
+RUN mkdir -p /docker-entrypoint-initdb.d && chmod 770 /docker-entrypoint.sh && service ntp start \
+	&& ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 3306 4444 4567 4567/udp 4568
