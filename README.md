@@ -8,7 +8,7 @@ Create secure docker containers running a galera cluster accross networks.
 
 Docker container can be pulled from stuartz/mariadb-cluster:latest or vernonco/mariadb-cluster:stable
 
-**Currently using Mariadb 10.1.16.**
+**Currently using Mariadb 10.1.17.**
 Modified the official Mariadb docker container to create a secure ssl cluster:
 * installed openssl and xtrabackup
 * adding my.cnf to /etc/mysql/my.cnf or add -v my.cnf:/etc/mysql/my.cnf
@@ -111,4 +111,4 @@ COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran 
 # was able to use weave with encrypted pipes for IST
 **or hosted service that has private ip and public ip**
 
-`wating for Galera version 25.3.16 to add wsrep_provider_options="ist.bind=<privateIP>;..."`
+`To use without weave, bind IST listener on container running in EC2 (ie. wsrep_provider_options="ist.recv_addr=ec2 ip or host)`
