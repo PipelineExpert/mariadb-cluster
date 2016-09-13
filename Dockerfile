@@ -16,11 +16,12 @@ MAINTAINER "Stuart Zurcher" <https://github.com/stuartz-VernonCo>
 # comment out a few problematic configuration values
 # don't reverse lookup hostnames, they are usually another container
 
-ENV MARIADB_MAJOR 10.1
-ENV MARIADB_VERSION 10.1.16+maria-1~jessie
+# ENV MARIADB_MAJOR 10.1
+ENV MARIADB_VERSION 10.1.17+maria-1~jessie
 RUN groupadd -r mysql && useradd -r -g mysql mysql \
-	&& apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 199369E5404BD5FC7D2FE43BCBCB082A1BB943DB \
-	&& echo "deb http://ftp.osuosl.org/pub/mariadb/repo/$MARIADB_MAJOR/debian jessie main" > /etc/apt/sources.list.d/mariadb.list \
+    && apt-get update && apt-get install -y software-properties-common \
+    && apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xcbcb082a1bb943db \
+    && add-apt-repository 'deb [arch=amd64,i386] http://ftp.utexas.edu/mariadb/repo/10.1/debian jessie main'\
 	&& { \
 		echo 'Package: *'; \
 		echo 'Pin: release o=MariaDB'; \
@@ -34,8 +35,8 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql \
 	&& apt-get install -y pwgen wget ntp ntpdate\
 		mariadb-server=$MARIADB_VERSION \
 		openssl nano netcat-traditional socat pv locate \
-	&& wget https://repo.percona.com/apt/percona-release_0.1-3.jessie_all.deb \
-	&& dpkg -i percona-release_0.1-3.jessie_all.deb \
+	&& wget https://repo.percona.com/apt/percona-release_0.1-4.jessie_all.deb \
+	&& dpkg -i percona-release_0.1-4.jessie_all.deb \
 	&& apt-get update \
 	&& apt-get install -y percona-xtrabackup-24 \
 	&& rm -rf /var/lib/apt/lists/* \
