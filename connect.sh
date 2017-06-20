@@ -6,9 +6,7 @@ then
 	exit
 fi
 eval $(docker-machine env $2)
-docker run -it --link galera_node:mysql --rm \
-  -v /data:/var/lib/mysql \
-  -v /home/ubuntu/certs:/etc/mysql/ssl \
+docker $(weave config) run -it --link galera_node:mysql --rm \
   -e TERM=xterm \
 	vernonco/mariadb-cluster:stable \
 	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p$1'

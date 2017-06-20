@@ -2,7 +2,7 @@ version: '3'
 services:
   node:
     image: vernonco/mariadb-cluster:stable
-    container_name: galera_node
+    container_name: galera_node  #remove if using nodes on same vm to avoid conflict
     hostname: ${node}
     ports:
       - "3306:3306"
@@ -14,11 +14,11 @@ services:
       - TERM=xterm
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - CLUSTER_NAME=${CLUSTER_NAME}
-      - CLUSTER_JOIN=gcomm://node1,node2,node3
+      - CLUSTER_JOIN=   #leave empty to start cluster
       - SMTP_SERVER=${SMTP_SERVER}
       - SMTP_USERNAME=${SMTP_USERNAME}
   #  volumes:
-      # can use following to customize
+      # can use following to start from previous database and customize
       #- /var/lib/docker/data:/var/lib/mysql:Z
       #- /path_to/my.cnf:/etc/mysql/my.cnf
     log_opt:
@@ -27,10 +27,22 @@ services:
     restart: unless-stopped
 
 
-# **** used to start additional nodes only!  use start.yml to start a cluster  ********
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: myadmin
+    ports:
+      - "127.0.0.1:80:80"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${rootpassword}
+    links:
+      - node:db
 
+# **** used to start nodes with root password  **********
+# put local my.cnf on machine with wsrep option for master or nodes
 # put on machine running weave and
 # docker-compose $(weave config) -pgalera_ up
 
 # log opt prevent log files from getting out of hand
 # TERM allows nano
+# phpadmin only needed on one node
+# if need https to phpadmin add nginx and port phpmyadmin 127.0.0.1:80:80

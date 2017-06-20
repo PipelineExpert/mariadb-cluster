@@ -1,4 +1,6 @@
 #!/bin/sh
+
+# an example script
 # if not installed on host
 #sudo curl -L git.io/weave -o /usr/local/bin/weave && sudo chmod +x /usr/local/bin/weave
 

@@ -16,12 +16,13 @@ MAINTAINER "Stuart Zurcher" <https://github.com/stuartz-VernonCo>
 # comment out a few problematic configuration values
 # don't reverse lookup hostnames, they are usually another container
 
-# ENV MARIADB_MAJOR 10.1
-ENV MARIADB_VERSION 10.1.17+maria-1~jessie
+ENV MARIADB_MAJOR 10.1
+ENV MARIADB_VERSION 10.1.20+maria-1~jessie
 RUN groupadd -r mysql && useradd -r -g mysql mysql \
-    && apt-get update && apt-get install -y software-properties-common \
+    && apt-get update && apt-get upgrade -y \
+    && apt-get install -y software-properties-common wget \
     && apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xcbcb082a1bb943db \
-    && add-apt-repository 'deb [arch=amd64,i386] http://ftp.utexas.edu/mariadb/repo/10.1/debian jessie main'\
+    && add-apt-repository 'deb [arch=amd64,i386] http://mirror.nodesdirect.com/mariadb//mariadb-10.1.20/repo/debian/ jessie main'\
 	&& { \
 		echo 'Package: *'; \
 		echo 'Pin: release o=MariaDB'; \
@@ -31,24 +32,19 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql \
 		echo mariadb-server-$MARIADB_MAJOR mysql-server/root_password password 'unused'; \
 		echo mariadb-server-$MARIADB_MAJOR mysql-server/root_password_again password 'unused'; \
 	} | debconf-set-selections \
-	&& apt-get update && apt-get upgrade -y \
+  && wget https://repo.percona.com/apt/percona-release_0.1-4.$(lsb_release -sc)_all.deb \
+	&& dpkg -i percona-release_0.1-4.jessie_all.deb \
+	&& apt-get update \
 	&& apt-get install -y pwgen wget ntp ntpdate\
 		mariadb-server=$MARIADB_VERSION \
 		openssl nano netcat-traditional socat pv locate \
-	&& wget https://repo.percona.com/apt/percona-release_0.1-4.jessie_all.deb \
-	&& dpkg -i percona-release_0.1-4.jessie_all.deb \
-	&& apt-get update \
+
 	&& apt-get install -y percona-xtrabackup-24 \
 	&& rm -rf /var/lib/apt/lists/* \
-	&& rm -rf /var/lib/mysql 
-	
-	#using volume  to local my.cnf now
-	#&& sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf \
-	#&& echo 'skip-host-cache\nskip-name-resolve' | awk '{ print } $1 == "[mysqld]" && c == 0 { c = 1; system("cat") }' /etc/mysql/my.cnf > /tmp/my.cnf \
-	#&& mv /tmp/my.cnf /etc/mysql/my.cnf \
-	#&& mkdir /var/lib/mysql 
-	
-COPY my_aws.cnf /etc/mysql/my.cnf
+	&& rm -rf /var/lib/mysql
+
+COPY my.cnf /etc/mysql/my.cnf
+COPY galeranotify.py /etc/galeranotify.py
 
 COPY docker-entrypoint.sh /
 # added chmod because of weird permission issue

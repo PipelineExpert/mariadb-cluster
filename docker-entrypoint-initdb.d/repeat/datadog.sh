@@ -5,8 +5,7 @@
 # run script to initialize datadog
 #docker-entrypoint-initdb.d folder must be copied to the machine and volume on docker-compose.yaml
 
-#get host name from /etc/mysql/my.cnf
-hostname=$(cat /etc/mysql/my.cnf | grep wsrep-node-name | cut -d "=" -f 2 )
+hostname=$HOSTNAME
 
 #install datadog
 datadog_user=your_user

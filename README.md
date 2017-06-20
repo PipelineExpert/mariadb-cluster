@@ -1,114 +1,82 @@
 # mariadb-cluster
-Create secure docker containers running a galera cluster accross networks.
+Used for containers running a Galera cluster across a secure Weave network.
 * Use at your own risk and modify paths/my.cnf as desired for security and setings.
-* You will need to open ports (3306, 4444, 4567-4568, 4567/udp) from the IPs in the host firewall
-* if using weave, open ports (6783-6784/udp, 6783, 2376)
+* To use weave, open ports (6783-6784/udp, 6783, 2376)
 * if all nodes are on AWS, open all ports between security group on VPC for simplicity
 * see iptables_sec.sh for securing host and docker container
 
 Docker container can be pulled from stuartz/mariadb-cluster:latest or vernonco/mariadb-cluster:stable
 
-**Currently using Mariadb 10.1.17.**
-Modified the official Mariadb docker container to create a secure ssl cluster:
-* installed openssl and xtrabackup
+**Currently using Mariadb 10.1.20.**
+Modified the official Mariadb docker container to create a secure cluster running
+on a WAN secure Weave network.  These settings are not secure in themselves, but rely on a
+secure network like Weave with ssl enabled for WAN or an AWS VPC:
+* installed xtrabackup-v2
 * adding my.cnf to /etc/mysql/my.cnf or add -v my.cnf:/etc/mysql/my.cnf
-* my.cnf  includes mandatory galera settings including bind-address   = 0.0.0.0 and ssl settings
+* my.cnf  includes mandatory galera settings including bind-address   = 0.0.0.0
 * removed --skip-networking from entrypoint.sh
 * exposed necessary ports for Galera
-* initial wsrep options passed are written to my.cnf for persistence with volume container
+* added notification utility galeranotify.py
 
-**SSL certificates**
-You can generate self-signed certificate with `generate_certs.sh`, and -v /path/to/certs/:/etc/mysql/ssl/
-Following naming convention in galera.cnf for certs:
-
-`[mysqld]`
-
-`ssl-ca=/etc/mysql/ssl/ca-cert.pem`
-
-`ssl-cert=/etc/mysql/ssl/server-cert.pem`
-
-`ssl-key=/etc/mysql/ssl/server-key.pem`
-
-`[mysql]`
-
-`ssl-ca = /etc/mysql/ssl/ca-cert.pem`
-
-`ssl-key = /etc/mysql/ssl/client-key.pem`
-
-`ssl-cert =/etc/mysql/ssl/client-cert.pem`
-
-`[sst]`
-
-`tca=/etc/mysql/ssl/ca-cert.pem`
-
-`tcert=/etc/mysql/ssl/server-cert.pem`
-
-`tkey=/etc/mysql/ssl/server-key.pem`
-* see http://galeracluster.com/documentation-webpages/sslcert.html*
-* modify and use send_certs.sh to send to docker-machines the nodes will run on*
 
 COPY *.sh, *.sql, and *.sql.gz files to ./docker-entrypoint-initdb.d/ to be ran at init.
+
+**Environment Variables**
+
+Required:
+
+* MYSQL_ROOT_PASSWORD='You need to specify one of MYSQL_ROOT_PASSWORD, MYSQL_ALLOW_EMPTY_PASSWORD and MYSQL_RANDOM_ROOT_PASSWORD
+* CLUSTER_NAME='your_cluster_name'
+* WEAVE_PASSWORD='longrandompassword to secure weave' -- required if using weave
+
+Optional:
+
+* SMTP_SERVER='your smtp server url' if desiring notification of node status changes
+* SMTP_USERNAME='user@company.com'  used for username, from, and to
+* MYSQL_DATABASE='name of database to create'
+* MYSQL_USER='username to connect to above database'
+* MYSQL_PASSWORD='password for MYSQL_USER'
 
 
 **Scripts from https://github.com/stuartz/mariadb-cluster**
 
-#docker-compose examples using weave for encrypted connection between nodes
-# see install_compose_weave.sh  and weave_launch.sh
-**start nodes**
+** see create_galera_cluster.sh  which creates AWS instances with a cluster running on weaves
 
-`docker-compose $(weave config) -f docker-compose_start.yml -p galera_ up -d`
+** start cluster first node **
+
+`docker-compose $(weave config) -f start.yml -p galera_ up -d`
 
 **restart or update nodes**
 
 `docker-compose $(weave config) -p galera_ up -d`
 
-**backup maintenance for nodes**
+**backup & maintenance for nodes**
 
 `cluster_status.sh, snap_create.sh and snap_delete.py on cron jobs`
 
-#docker script examples are no longer maintained--left for reference
-# using local my.cnf copy and compose and weave instead
-
-`export my_pw="somepwd"`
-
-`export cluster_addresses="10.1.1.3,10.1.1.4, etc."`
-
-**first node**
-
-** named node1**
-
-`sh first_node.sh _host_IP_ $m_pwd  [ ":tag" docker-machine name ]`
-
-**other nodes (change this_node_IP for each)**
-
-** named node`#`**
-
-`sh additional_node.sh _host_IP_  $m_pwd _node#_ $cluster_addresses [ ":tag" docker-machine_name ]`
-
-**restart/upgrade a node**
-
-`sh restart_first_node.sh [ ":tag" docker-machine name ]`
-
-`sh restart_additional_node.sh  _node#_  [ ":tag" docker-machine_name ]`
-
-**connect to local node$1**
-
-`sh connect.sh _node#_ _root_passwd_`
-
-**connect to remote node**
-
-`sh rconnect.sh _host_IP_ _port_ _root_passwd_`
-
+**Node Status Notification**
+if desiring notification on node status changes add following environment variables:
+* SMTP_SERVER = 'your smtp server url' # 'vernoncompany-com.mail.protection.outlook.com'
+* SMTP_USERNAME = 'your email' # --used for from and to
+* if Tls needed for authentication, modify galeranotify.py
 
 **MySQL connect to node1 (same as connect.sh)**
 
-`docker run -it --link node1:mysql --rm -e TERM=xterm\`
-`	-v /var/lib/mysql -v /path-to-certs/:/etc/mysql/ssl \`
+`docker $(weave config) run -it --link node1:mysql --rm -e TERM=xterm\`
 `	stuartz/mariadb-cluster \`
 `	sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p'`
 
+
+**Without docker-compose on secured weave network**
+First node:
+`docker $(weave config) run -d -e MYSQL_ROOT_PASSWORD=somepass -e CLUSTER_JOIN='' \`
+`   -e CLUSTER_NAME='your_cluster_name' --hostname=node1 stuartz/mariadb-cluster`
+Additional nodes (change node#):
+`docker $(weave config) run -d -e MYSQL_ROOT_PASSWORD=somepass -e CLUSTER_JOIN='node1,node2,node3' \`
+`   -e CLUSTER_NAME='your_cluster_name' --hostname=node# stuartz/mariadb-cluster`
+
 # IST sync on AWS
-# was able to use weave with encrypted pipes for IST
-**or hosted service that has private ip and public ip**
+** was able to use weave with encrypted pipes for IST**
+**on hosted service that has private ip and public ip**
 
 `To use without weave, bind IST listener on container running in EC2 (ie. wsrep_provider_options="ist.recv_addr=ec2 ip or host)`
