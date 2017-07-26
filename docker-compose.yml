@@ -1,9 +1,12 @@
 version: '3'
 services:
   node:
-    image: vernonco/mariadb-cluster:stable
+    image: vernonco/mariadb-cluster:10_2_6
     container_name: galera_node
     hostname: ${node}
+    domainname: weave.local.
+    dns_search: weave.local.
+    network_mode: "bridge"
     ports:
       - "3306:3306"
       - "4444:4444"
@@ -12,20 +15,23 @@ services:
       - "4568:4568"
     environment:
       - TERM=xterm
+      - node=${node}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - XTRABACKUP_PASSWORD=${XTRABACKUP_PASSWORD}
       - CLUSTER_NAME=${CLUSTER_NAME}
-      - CLUSTER_JOIN=gcomm://node1,node2,node3
-      - SMTP_SERVER=${SMTP_SERVER}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-  #  volumes:
-      # can use following to customize
-      #- /var/lib/docker/data:/var/lib/mysql:Z
+      - CLUSTER_JOIN=${CLUSTER_JOIN}
+      - MAIL_FROM=${MAIL_FROM}
+      - MAIL_TO=${MAIL_TO}
+    volumes:
+      # can use following to start from previous database and customize
+      # ./data is needed if using update.sh for persistence
+      - /var/lib/docker/data:/var/lib/mysql:Z
       #- /path_to/my.cnf:/etc/mysql/my.cnf
-    log_opt:
-      max-size: "100k"
-      max-file: "20"
+    logging:
+      options:
+        max-size: "100k"
+        max-file: "20"
     restart: unless-stopped
-
 
 # **** used to start additional nodes only!  use start.yml to start a cluster  ********
 

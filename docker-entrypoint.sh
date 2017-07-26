@@ -9,10 +9,11 @@ fi
 
 [ -z "$TTL" ] && TTL=10
 
-if [ -z "$CLUSTER_NAME" ]; then
-	echo >&2 'Error:  You need to specify CLUSTER_NAME'
-	exit 1
-fi
+
+echo "wsrep_node_address: $node"
+#set config in my.cnf
+sed -i "s|wsrep_node_address.*|wsrep_node_address = $node|g" /etc/mysql/my.cnf
+
 # Get config
 DATADIR="$("mysqld" --verbose --help 2>/dev/null | awk '$1 == "datadir" { print $2; exit }')"
 echo >&2 "Content of $DATADIR:"
@@ -20,6 +21,24 @@ ls -al $DATADIR
 
 # initialize database if not previously innitialized.
 if [ ! -s "$DATADIR/grastate.dat" ]; then
+
+	# set buffer pool size to 80% of Available mem
+	mem=$(printf %.0f $(cat /proc/meminfo |grep MemAvailable |awk "{print \$2*.8/1000}"))
+	sed -i "s|innodb-buffer-pool-size.*|innodb-buffer-pool-size = ${mem}M|g" /etc/mysql/my.cnf
+
+    if [ -z "$CLUSTER_NAME" ]; then
+    	echo >&2 'Error:  You need to specify CLUSTER_NAME'
+    	exit 1
+    fi
+    sed -i "s|wsrep_cluster_name.*|wsrep_cluster_name = $CLUSTER_NAME|g" /etc/mysql/my.cnf
+    if [ -z "$node" ]; then
+    	echo >&2 'Error:  You need to specify node'
+    	exit 1
+    fi
+    echo "wsrep_node_address: $node"
+    #set config in my.cnf
+    sed -i "s|wsrep_node_address.*|wsrep_node_address = $node|g" /etc/mysql/my.cnf
+
 	INITIALIZED=1
 	if [ -z "$MYSQL_ROOT_PASSWORD" -a -z "$MYSQL_ALLOW_EMPTY_PASSWORD" -a -z "$MYSQL_RANDOM_ROOT_PASSWORD" ]; then
                     echo >&2 'error: database is uninitialized and password option is not specified '
@@ -49,13 +68,16 @@ if [ ! -s "$DATADIR/grastate.dat" ]; then
 		echo >&2 'MySQL init process failed.'
 		exit 1
 	fi
-
+    [ -z $XTRABACKUP_PASSWORD ] && XTRABACKUP_PASSWORD="$MYSQL_ROOT_PASSWORD"
+    echo "xtrabackup | $XTRABACKUP_PASSWORD"
 	# sed is for https://bugs.mysql.com/bug.php?id=20545
 	mysql_tzinfo_to_sql /usr/share/zoneinfo | sed 's/Local time zone must be set--see zic manual page/FCTY/' | "${mysql[@]}" mysql
-	if [ ! -z "$MYSQL_RANDOM_ROOT_PASSWORD" ]; then
-		MYSQL_ROOT_PASSWORD="$(pwmake 128)"
-		echo "GENERATED ROOT PASSWORD: $MYSQL_ROOT_PASSWORD"
-	fi
+	    # set up  datadog
+    if [ ! -z "$DATA_DOG_API_KEY" ];then
+        echo "$0: running datadog init"; . "/etc/datadog.sh" ;
+    fi
+    echo "Creating users."
+
 	"${mysql[@]}" <<-EOSQL
 		-- What's done in this file shouldn't be replicated
 		--  or products like mysql-fabric won't work
@@ -63,12 +85,21 @@ if [ ! -s "$DATADIR/grastate.dat" ]; then
 		DELETE FROM mysql.user ;
 		CREATE USER 'root'@'%' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}' ;
 		GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION ;
-		CREATE USER 'xtrabackup'@'localhost' IDENTIFIED BY '$XTRABACKUP_PASSWORD';
-		GRANT RELOAD,LOCK TABLES,REPLICATION CLIENT ON *.* TO 'xtrabackup'@'localhost';
-		GRANT REPLICATION CLIENT ON *.* TO monitor@'%' IDENTIFIED BY 'monitor';
+		CREATE USER 'xtrabackup'@'localhost' IDENTIFIED BY '${XTRABACKUP_PASSWORD}';
+		GRANT PROCESS, RELOAD, LOCK TABLES,REPLICATION CLIENT ON *.* TO 'xtrabackup'@'localhost';
 		DROP DATABASE IF EXISTS test ;
 		FLUSH PRIVILEGES ;
 	EOSQL
+
+    if [ ! -z $MONITOR_PASSWORD ] && [ ! -z $MONITOR_USER ];then
+        echo "Creating monitor user: $MONITOR_USER"
+    	"${mysql[@]}" <<-EOSQL
+            CREATE USER '${MONITOR_USER}'@'localhost' IDENTIFIED BY '${MONITOR_PASSWORD}';
+            GRANT REPLICATION CLIENT, SUPER, PROCESS ON *.* TO '${MONITOR_USER}'@'localhost';
+            GRANT SELECT ON performance_schema.* TO '${MONITOR_USER}'@'localhost';
+    		FLUSH PRIVILEGES ;
+    	EOSQL
+    fi
 	if [ ! -z "$MYSQL_ROOT_PASSWORD" ]; then
 		mysql+=( -p"${MYSQL_ROOT_PASSWORD}" )
 	fi
@@ -112,34 +143,44 @@ if [ ! -s "$DATADIR/grastate.dat" ]; then
 	echo
 	echo 'MySQL init process done. Ready for start up.'
 	echo
+
+    sed -i "s|wsrep_sst_auth.*|wsrep_sst_auth = xtrabackup:$XTRABACKUP_PASSWORD|g" /etc/mysql/my.cnf
+
 fi
+
+# always run following...\
+
 chown -R mysql:mysql "$DATADIR"
-
-cluster_join=$CLUSTER_JOIN
-
-# set IP address based on the primary interface
-# picks up the Weave assigned ip for its secure network
-ipaddr=$(hostname -i | awk {'print $1'})
-[ -z $ipaddr ] && ipaddr=$(hostname -I | awk {'print $1'})
-
 echo
+#used when install sendmail
+#apt-get install -y sendmail sendmail-cf m4 \
+#	&& rm -r /var/lib/apt/lists/*
+# add host to /etc/hosts
+[ -z $MAIL_FROM ] && DOMAIN='noreply@vernoncompany.com'
+host=`hostname`
+line=$(cat /etc/hosts |grep [1]27.0.0.1)
+sed  "s|$line|$line $MAIL_FROM $host|g"  /etc/hosts
+echo "$host" >> /etc/mail/relay-domains
+sed "s|, Addr=127.0.0.1||g" /etc/mail/sendmail.mc
+m4 /etc/mail/sendmail.mc > /etc/mail/sendmail.cf
+#start service
+sendmail -bd
+set -e
+
 echo >&2 ">> Starting mysqld process"
-if [ -z $cluster_join ]; then
+if [ -z $CLUSTER_JOIN ]; then
 	export _WSREP_NEW_CLUSTER='--wsrep-new-cluster'
-    export _WSREP_CLUSTER_JOIN=''
 	# set safe_to_bootstrap = 1
 	GRASTATE=$DATADIR/grastate.dat
 	[ -f $GRASTATE ] && sed -i "s|safe_to_bootstrap.*|safe_to_bootstrap: 1|g" $GRASTATE
 else
+    sed -i "s|wsrep_cluster_address.*|wsrep_cluster_address = 'gcomm://$CLUSTER_JOIN'|g" /etc/mysql/my.cnf
 	export _WSREP_NEW_CLUSTER=''
-    export _WSREP_CLUSTER_JOIN='--wsrep-cluster-address="gcomm://'+$cluster_join+'"'
 fi
 
+
 # these arguments will overide those of /etc/my.cnf
-exec mysqld --wsrep_cluster_name=$CLUSTER_NAME \
-    $_WSREP_CLUSTER_JOIN  --wsrep-node-address=$ipaddr \
-    --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
-    $_WSREP_NEW_CLUSTER $CMDARG
+exec mysqld $_WSREP_NEW_CLUSTER $CMDARG
 
 # leave at end of file
 echo  "Running scripts for things that are not persistent"

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# not needed on AWS
 # start other applications first to get dns-lookup
 
 acceptable_IPs="list of comma separated ips"

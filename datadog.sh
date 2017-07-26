@@ -8,9 +8,9 @@
 hostname=$HOSTNAME
 
 #install datadog
-datadog_user=your_user
-datadog_pwd=user_pwd
-DD_API_KEY=datadog_key
+datadog_user=$MONITOR_USER
+datadog_pwd=$MONITOR_PASSWORD
+DD_API_KEY=$DATA_DOG_API_KEY
 bash -c "$(curl -L https://raw.githubusercontent.com/DataDog/dd-agent/master/packaging/datadog-agent/source/install_agent.sh)"
 
 #edit datadog.conf

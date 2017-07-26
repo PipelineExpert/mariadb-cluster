@@ -37,15 +37,15 @@ send_alert() {
 
 ###### before snapshot
 #prevent flow control issue
-docker-machine ssh galera-aws2 "mysql --defaults-file=.bkup-my.cnf -e 'set global wsrep_desync=ON;'"
+docker-machine ssh node1 "mysql --defaults-file=.bkup-my.cnf -e 'set global wsrep_desync=ON;'"
 if [ $? -gt 0 ]; then 
   send_alert "snap_create.sh: Failed running mysql wsrep_desync=ON" 2
   exit 1 
 fi
 #temporarily lock and flush for a clean shapshot
-docker-machine ssh galera-aws2 "mysql --defaults-file=.bkup-my.cnf -e 'FLUSH TABLES WITH READ LOCK AND DISABLE CHECKPOINT;'" 
+docker-machine ssh node1 "mysql --defaults-file=.bkup-my.cnf -e 'FLUSH TABLES WITH READ LOCK AND DISABLE CHECKPOINT;'" 
 if [ $? -gt 0 ]; then 
-  docker-machine ssh galera-aws2 "mysql --defaults-file=.bkup-my.cnf -e 'set global wsrep_desync=OFF;'"
+  docker-machine ssh node1 "mysql --defaults-file=.bkup-my.cnf -e 'set global wsrep_desync=OFF;'"
   send_alert "snap_create.sh: Failed running mysql freeze" 2
   exit 1 
 else 
@@ -68,14 +68,14 @@ else
 fi
 
 ##### after snapshot
-docker-machine ssh galera-aws2 "date +'%F %H:%M:%S' > sql_backup_time; mysql --defaults-file=.bkup-my.cnf -e 'unlock tables;'" 
+docker-machine ssh node1 "date +'%F %H:%M:%S' > sql_backup_time; mysql --defaults-file=.bkup-my.cnf -e 'unlock tables;'" 
 if [ $? -gt 0 ]; then 
   send_alert "snap_create.sh: Failed running mysql unfreeze" 2
   exit 1 
 fi
 
 # rejoin nodes as synced
-docker-machine ssh galera-aws2 "mysql --defaults-file=.bkup-my.cnf -e 'set global wsrep_desync=OFF;'"
+docker-machine ssh node1 "mysql --defaults-file=.bkup-my.cnf -e 'set global wsrep_desync=OFF;'"
 if [ $? -gt 0 ]; then 
   send_alert "snap_create.sh: Failed running mysql wsrep_desync=OFF" 2
   exit 1 
@@ -84,7 +84,7 @@ else
 fi
 
 ##### finish snapshot
-docker-machine ssh galera-aws2 "bash snap_inner"
+docker-machine ssh node1 "bash snap_inner"
 if [ $? -gt 0 ]; then 
   send_alert "snap_create.sh: Failed running mysql truncate logs" 2
   exit 1 

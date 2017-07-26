@@ -1,4 +1,4 @@
-#!/opt/datadog-agent/embedded/bin/python
+#!/usr/bin/python
 #
 # Script to send email notifications when a change in Galera cluster membership
 # occurs.
@@ -15,9 +15,9 @@
 
 import os
 import sys
-import getopt
+import argparse
+from subprocess import Popen, PIPE
 
-import smtplib
 import datetime
 
 try: from email.mime.text import MIMEText
@@ -30,24 +30,12 @@ import socket
 # Change this to some value if you don't want your server hostname to show in
 # the notification emails
 THIS_SERVER = socket.gethostname()
-
-# Server hostname or IP address
-SMTP_SERVER = os.getenv('SMTP_SERVER','localhost')
-SMTP_PORT = 25
-
-# Set to True if you need SMTP over SSL
-SMTP_SSL = False
-
-# Set to True if you need to authenticate to your SMTP server
-SMTP_AUTH = False
-# Fill in authorization information here if True above
-SMTP_USERNAME = os.getenv('SMTP_USERNAME','root')
-SMTP_PASSWORD = ''
-
 # Takes a single sender
-MAIL_FROM = os.getenv('SMTP_USERNAME','root')
+HOST = os.getenv('HOSTNAME')
+MAIL_FROM = os.getenv('MAIL_FROM','noreply@'+HOST)
 # Takes a list of recipients
-MAIL_TO = os.getenv('MAIL_TO','root')
+MAIL_TO = [os.getenv('MAIL_TO','root')]
+
 
 # Need Date in Header for SMTP RFC Compliance
 DATE = datetime.datetime.now().strftime( "%m/%d/%Y %H:%M" )
@@ -55,72 +43,53 @@ DATE = datetime.datetime.now().strftime( "%m/%d/%Y %H:%M" )
 # Edit below at your own risk
 ################################################################################
 def main(argv):
-    str_status = ''
-    str_uuid = ''
-    str_primary = ''
-    str_members = ''
-    str_index = ''
-    message = ''
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--status', type=str)
+    parser.add_argument('--primary', type=str)
+    parser.add_argument('--members', nargs='*')
+    parser.add_argument('--index', type=str)
+    parser.add_argument('--uuid', type=str)
 
     usage = "Usage: " + os.path.basename(sys.argv[0]) + " --status <status str>"
-    usage += " --uuid <state UUID> --primary <yes/no> --members <comma-seperated"
+    usage += " --primary <yes/no> --members <comma-seperated"
     usage += " list of the component member UUIDs> --index <n>"
-
-    try:
-        opts, args = getopt.getopt(argv, "h", ["status=","uuid=",'primary=','members=','index='])
-    except getopt.GetoptError:
-        print usage
-        sys.exit(2)
-
-    if(len(opts) > 0):
+    args = parser.parse_args()
+    if(len(vars(args)) > 0):
         message_obj = GaleraStatus(THIS_SERVER)
-
-        for opt, arg in opts:
+        for opt in vars(args):
             if opt == '-h':
-                print usage
+                print(usage)
                 sys.exit()
             elif opt in ("--status"):
-                message_obj.set_status(arg)
-            elif opt in ("--uuid"):
-                message_obj.set_uuid(arg)
+                message_obj.set_status(getattr(args,opt))
             elif opt in ("--primary"):
-                message_obj.set_primary(arg)
+                message_obj.set_primary(getattr(args,opt))
             elif opt in ("--members"):
-                message_obj.set_members(arg)
+                message_obj.set_members(getattr(args,opt))
             elif opt in ("--index"):
-                message_obj.set_index(arg)
+                message_obj.set_index(getattr(args,opt))
+
         try:
             send_notification(MAIL_FROM, MAIL_TO, 'Galera Notification: ' + THIS_SERVER, DATE,
-                              str(message_obj), SMTP_SERVER, SMTP_PORT, SMTP_SSL, SMTP_AUTH,
-                              SMTP_USERNAME, SMTP_PASSWORD)
-        except Exception, e:
-            print "Unable to send notification: %s" % e
+                              str(message_obj))
+        except Exception as e:
+            print("Unable to send notification: %s" % e)
             sys.exit(1)
     else:
-        print usage
+        print(usage)
         sys.exit(2)
 
     sys.exit(0)
 
-def send_notification(from_email, to_email, subject, date, message, smtp_server,
-                      smtp_port, use_ssl, use_auth, smtp_user, smtp_pass):
+def send_notification(from_email, to_email, subject, date, message):
     msg = MIMEText(message)
 
     msg['From'] = from_email
     msg['To'] = ', '.join(to_email)
     msg['Subject'] =  subject
     msg['Date'] =  date
-
-    if(use_ssl):
-        mailer = smtplib.SMTP_SSL(smtp_server, smtp_port)
-    else:
-        mailer = smtplib.SMTP(smtp_server, smtp_port)
-
-    if(use_auth):
-        mailer.login(smtp_user, smtp_pass)
-
-    mailer.sendmail(from_email, to_email, msg.as_string())
-    mailer.close()
+    p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
+    p.communicate(msg.as_string())
 
 class GaleraStatus:
     def __init__(self, server):
@@ -136,16 +105,13 @@ class GaleraStatus:
         self._status = status
         self._count += 1
 
-    def set_uuid(self, uuid):
-        self._uuid = uuid
-        self._count += 1
-
     def set_primary(self, primary):
-        self._primary = primary.capitalize()
-        self._count += 1
+        if primary:
+            self._primary = primary.capitalize()
+            self._count += 1
 
     def set_members(self, members):
-        self._members = members.split(',')
+        self._members = members
         self._count += 1
 
     def set_index(self, index):
@@ -163,9 +129,6 @@ class GaleraStatus:
 
         if(self._status):
             message += "Status of this node: " + self._status + "\n\n"
-
-        if(self._uuid):
-            message += "Cluster state UUID: " + self._uuid + "\n\n"
 
         if(self._primary):
             message += "Current cluster component is primary: " + self._primary + "\n\n"

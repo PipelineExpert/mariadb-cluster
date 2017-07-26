@@ -1,9 +1,12 @@
 version: '3'
 services:
   node:
-    image: vernonco/mariadb-cluster:stable
+    image: vernonco/mariadb-cluster:10_2_6
     container_name: galera_node  #remove if using nodes on same vm to avoid conflict
     hostname: ${node}
+    domainname: weave.local.
+    dns_search: weave.local.
+    network_mode: "bridge"
     ports:
       - "3306:3306"
       - "4444:4444"
@@ -12,30 +15,41 @@ services:
       - "4568:4568"
     environment:
       - TERM=xterm
+      - node=${node}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - XTRABACKUP_PASSWORD=${XTRABACKUP_PASSWORD}
       - CLUSTER_NAME=${CLUSTER_NAME}
       - CLUSTER_JOIN=   #leave empty to start cluster
-      - SMTP_SERVER=${SMTP_SERVER}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-  #  volumes:
+      - MAIL_FROM=${MAIL_FROM}
+      - MAIL_TO=${MAIL_TO}
+    volumes:
       # can use following to start from previous database and customize
-      #- /var/lib/docker/data:/var/lib/mysql:Z
+      # ./data is needed if using update.sh for persistence
+      - /var/lib/docker/data:/var/lib/mysql:Z
       #- /path_to/my.cnf:/etc/mysql/my.cnf
-    log_opt:
-      max-size: "100k"
-      max-file: "20"
+    logging:
+      options:
+        max-size: "100k"
+        max-file: "20"
     restart: unless-stopped
 
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: myadmin
+    container_name: dbadmin
+    hostname: dbadmin
     ports:
       - "127.0.0.1:80:80"
     environment:
-      - MYSQL_ROOT_PASSWORD=${rootpassword}
-    links:
-      - node:db
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - PMA_ARBITRARY=1
+    logging:
+      options:
+        max-size: "100k"
+        max-file: "20"
+    network_mode: "bridge"
+    domainname: weave.local.
+    dns_search: weave.local.
 
 # **** used to start nodes with root password  **********
 # put local my.cnf on machine with wsrep option for master or nodes
@@ -45,4 +59,5 @@ services:
 # log opt prevent log files from getting out of hand
 # TERM allows nano
 # phpadmin only needed on one node
+# and can connect to any by host name
 # if need https to phpadmin add nginx and port phpmyadmin 127.0.0.1:80:80

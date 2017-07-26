@@ -17,12 +17,14 @@ MAINTAINER "Stuart Zurcher" <https://github.com/stuartz-VernonCo>
 # don't reverse lookup hostnames, they are usually another container
 
 ENV MARIADB_MAJOR 10.1
-ENV MARIADB_VERSION 10.1.20+maria-1~jessie
+ENV MARIADB_REPO mariadb-10.1.22
+ENV MARIADB_PACKAGE 10.1.22+maria-1~jessie
+
 RUN groupadd -r mysql && useradd -r -g mysql mysql \
     && apt-get update && apt-get upgrade -y \
     && apt-get install -y software-properties-common wget \
     && apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xcbcb082a1bb943db \
-    && add-apt-repository 'deb [arch=amd64,i386] http://mirror.nodesdirect.com/mariadb//mariadb-10.1.20/repo/debian/ jessie main'\
+    && add-apt-repository "deb [arch=amd64,i386] http://mirror.nodesdirect.com/mariadb/$MARIADB_REPO/repo/debian/ jessie main" \
 	&& { \
 		echo 'Package: *'; \
 		echo 'Pin: release o=MariaDB'; \
@@ -36,19 +38,24 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql \
 	&& dpkg -i percona-release_0.1-4.jessie_all.deb \
 	&& apt-get update \
 	&& apt-get install -y pwgen wget ntp ntpdate\
-		mariadb-server=$MARIADB_VERSION \
+		mariadb-server=$MARIADB_PACKAGE \
 		openssl nano netcat-traditional socat pv locate \
-
-	&& apt-get install -y percona-xtrabackup-24 \
+        libpwquality-tools cracklib-runtime \
+    	percona-xtrabackup-24 \
+        sendmail sendmail-cf m4 \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& rm -rf /var/lib/mysql
 
 COPY my.cnf /etc/mysql/my.cnf
-COPY galeranotify.py /etc/galeranotify.py
+COPY galeranotify.py datadog.sh /etc/
 
 COPY docker-entrypoint.sh /
 # added chmod because of weird permission issue
-RUN mkdir -p /docker-entrypoint-initdb.d && chmod 770 /docker-entrypoint.sh && service ntp start \
-	&& ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime
+RUN mkdir -p /docker-entrypoint-initdb.d \
+    && chmod 550 /docker-entrypoint.sh \
+    && service ntp start \
+	&& ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime \
+    && chown mysql:mysql /etc/galeranotify.py \
+    && chmod 555 /etc/galeranotify.py
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 3306 4444 4567 4567/udp 4568
