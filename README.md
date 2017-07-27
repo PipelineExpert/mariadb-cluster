@@ -41,7 +41,7 @@ Optional:
 * MYSQL_USER='username to connect to above database'
 * MYSQL_PASSWORD='password for MYSQL_USER'
 * MONITOR_USER / MONITOR_PASSWORD -- creates user with REPLICATION CLIENT, SUPER, PROCESS for monitoring
-* DATA_DOG_API_KEY -- to monitor with datadog
+* DATA_DOG_API_KEY -- to monitor with datadog. Requires datadog.sh in /docker-entrypoint-initdb.d/repeat/ 
 * WEAVE_VERSION -- defaults to latest, can set version here (ie. 1.9.4)
 
 
@@ -91,6 +91,8 @@ stuartz/mariadb-cluster`
 `To use without weave, bind IST listener on container running in EC2 (ie. wsrep_provider_options="ist.recv_addr=ec2 ip or host)`
 
 # Clone and build
+git clone https://github.com/stuartz/mariadb-cluster.git
+
 docker build -t yourrepository/mariadb:tag .
 
 docker push yourrepository/mariadb:tag
